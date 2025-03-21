@@ -142,7 +142,6 @@
                     <argLine>-XX:+EnableDynamicAgentLoading</argLine>
                     <includes>
                         <include>**/*Test.*</include>
-                        <include>**/*Spec.*</include>
                     </includes>
                 </configuration>
             </plugin>
