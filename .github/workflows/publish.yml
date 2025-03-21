@@ -26,6 +26,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: "publish"
+  cancel-in-progress: false
+
 jobs:
   determine-version:
     name: "Determine Release Version"
