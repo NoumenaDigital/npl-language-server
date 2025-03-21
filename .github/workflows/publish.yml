@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - initial # TODO: remove
   workflow_dispatch:
     inputs:
       release_tag:
