@@ -48,6 +48,8 @@ jobs:
 
       - name: "Determine Release Version"
         id: set-version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Use manual inputs if provided
           if [ -n "${{ github.event.inputs.release_tag }}" ]; then

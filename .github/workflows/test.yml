@@ -7,10 +7,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  GITHUB_REPO_USER: "${{ secrets.GH_PLATFORM_USERNAME }}"
-  GITHUB_REPO_PASS: "${{ secrets.GH_PLATFORM_PASSWORD }}"
-
 jobs:
   verify:
     name: "Verify PR"
