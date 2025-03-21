@@ -39,13 +39,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: "Set up Maven"
-        uses: actions/setup-java@v4
-        with:
-          distribution: "graalvm"
-          java-version: "21"
-          cache: "maven"
-
       - name: "Determine Release Version"
         id: set-version
         env:
