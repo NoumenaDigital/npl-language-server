@@ -9,6 +9,18 @@ The language server can operate in two modes:
 - TCP mode: Listens on a specified port (default: 5007)
 - STDIO mode: Communicates through standard input/output
 
+## Development
+
+### Setup
+
+You'll need Maven and Java 21 (graalvm if you want to build binaries) or later installed on your system. 
+
+### Build project and run tests
+
+```bash
+mvn clean verify
+```
+
 ## Testing with VS Code
 
 To test the language server with VS Code:
