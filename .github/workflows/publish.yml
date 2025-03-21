@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - initial # TODO: remove
   workflow_dispatch:
     inputs:
       release_tag:
@@ -148,6 +149,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ needs.determine-version.outputs.release_tag }}
           name: ${{ needs.determine-version.outputs.release_name }}
+          body: "NPL Language Server release ${{ needs.determine-version.outputs.release_tag }}"
+          commit: ${{ github.sha }}
           draft: ${{ github.event.inputs.draft || false }}
           prerelease: ${{ github.event.inputs.prerelease || false }}
           artifacts: "./individual-artifacts/*/*"
