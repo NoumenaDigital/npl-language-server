@@ -152,7 +152,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ needs.determine-version.outputs.release_tag }}
           name: ${{ needs.determine-version.outputs.release_name }}
-          draft: ${{ github.event.inputs.draft || true }}
+          draft: ${{ github.event.inputs.draft || false }}
           prerelease: ${{ github.event.inputs.prerelease || false }}
           artifacts: "./individual-artifacts/*/*"
           artifactErrorsFailBuild: true
