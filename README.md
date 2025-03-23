@@ -149,7 +149,7 @@ pre-commit run pretty-format-kotlin --all-files
 #### prettier
 
 We use [prettier](https://prettier.io) to format our Markdown. The configuration is found in
-[.prettierrc.json](.prettierrc.json)
+[.prettierrc.yml](.prettierrc.yml).
 
 To format all Markdown files in the project, run (needed if e.g. the corresponding job is failing):
 
