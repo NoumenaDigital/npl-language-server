@@ -1,7 +1,10 @@
 name: "Run tests"
 on:
   pull_request:
-    types: [ opened, synchronize, reopened ]
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -9,7 +12,7 @@ concurrency:
 
 jobs:
   verify:
-    name: "Verify PR"
+    name: "Run tests"
     runs-on: "ubuntu-latest"
     steps:
       - name: "Checkout"
