@@ -24,6 +24,11 @@ on:
         required: false
         type: boolean
         default: false
+      force_release:
+        description: "Force release regardless of Release trailer"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: "publish"
@@ -36,14 +41,32 @@ jobs:
     outputs:
       release_tag: ${{ steps.set-version.outputs.release_tag }}
       release_name: ${{ steps.set-version.outputs.release_name }}
+      should_release: ${{ steps.check-release-flag.outputs.should_release }}
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: "Check Release Flag"
+        id: check-release-flag
+        run: |
+          # Set environment variable for force release
+          export FORCE_RELEASE="${{ github.event.inputs.force_release }}"
+          
+          # Run the script and capture its output
+          OUTPUT=$(.github/scripts/check-release-flag.sh)
+          
+          # Extract the should_release value and set as output
+          SHOULD_RELEASE=$(echo "$OUTPUT" | grep "should_release=" | cut -d= -f2)
+          echo "should_release=$SHOULD_RELEASE" >> $GITHUB_OUTPUT
+          
+          # Display the full output for debugging
+          echo "$OUTPUT"
+
       - name: "Determine Release Version"
         id: set-version
+        if: steps.check-release-flag.outputs.should_release == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -64,6 +87,8 @@ jobs:
 
   build-native:
     name: "Build ${{ matrix.os }}-${{ matrix.arch }} Native Binary"
+    needs: determine-version
+    if: needs.determine-version.outputs.should_release == 'true'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -133,7 +158,7 @@ jobs:
   create-release:
     name: "Create GitHub Release"
     needs: [determine-version, build-native]
-    if: success()
+    if: needs.determine-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: "Download individual artifacts"
