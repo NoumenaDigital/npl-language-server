@@ -25,12 +25,10 @@ if [[ "$PR_BODY" == *"Ticket: "* ]]; then
 fi
 
 # Check Release value
-if [[ "$PR_BODY" == *"Release: "* ]]; then
-  RELEASE=$(echo "$PR_BODY" | grep -o "Release: true\|Release: false" || echo "")
-  if [[ -z "$RELEASE" ]]; then
-    echo "Error: Release value must be either 'true' or 'false'."
-    exit 1
-  fi
+RELEASE=$(echo "$PR_BODY" | grep -o "Release: true\|Release: false" || echo "")
+if [[ -z "$RELEASE" ]]; then
+  echo "Error: PR description must include 'Release: true' or 'Release: false'."
+  exit 1
 fi
 
 echo "PR validation passed!"
