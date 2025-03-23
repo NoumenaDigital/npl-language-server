@@ -31,10 +31,21 @@ class TestServerLauncher : ServerLauncher {
         startServer(server, input, output)
     }
 
-    private fun createMockInputStream() = object : InputStream() { override fun read(): Int = -1 }
-    private fun createMockOutputStream() = object : OutputStream() { override fun write(b: Int) {} }
+    private fun createMockInputStream() =
+        object : InputStream() {
+            override fun read(): Int = -1
+        }
 
-    override fun startServer(languageServer: LanguageServer, input: InputStream, output: OutputStream) {
+    private fun createMockOutputStream() =
+        object : OutputStream() {
+            override fun write(b: Int) {}
+        }
+
+    override fun startServer(
+        languageServer: LanguageServer,
+        input: InputStream,
+        output: OutputStream,
+    ) {
         inputStream = input
         outputStream = output
     }

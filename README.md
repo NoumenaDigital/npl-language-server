@@ -13,7 +13,7 @@ The language server can operate in two modes:
 
 ### Setup
 
-You'll need Maven and Java 21 (graalvm if you want to build binaries) or later installed on your system. 
+You'll need Maven and Java 21 (graalvm if you want to build binaries) or later installed on your system.
 
 ### Build project and run tests
 

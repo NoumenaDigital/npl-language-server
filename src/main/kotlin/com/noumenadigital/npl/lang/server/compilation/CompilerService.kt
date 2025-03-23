@@ -23,7 +23,11 @@ private const val NPL_FILE_EXTENSION = "npl"
 private const val TARGET_DIR_PATTERN = "/target/"
 
 interface CompilerService {
-    fun updateSource(uri: String, @Language("NPL") content: String)
+    fun updateSource(
+        uri: String,
+        @Language("NPL") content: String,
+    )
+
     fun preloadSources(nplRootUri: String)
 }
 
@@ -41,8 +45,9 @@ class DefaultCompilerService(
         try {
             // TODO ST-4481: Improve error handling - the compiler should not throw exceptions for normal compilation errors.
             // Instead, errors should be part of the CompileResult and we should avoid try-catch for expected errors.
-            val compileResult = Loader(CompilerConfiguration(tag = null, quirksMode = true))
-                .loadPackages(sources = sourceList)
+            val compileResult =
+                Loader(CompilerConfiguration(tag = null, quirksMode = true))
+                    .loadPackages(sources = sourceList)
             lastCompileResult = compileResult
             modifiedSources.clear()
             publishDiagnostics(sourceList, compileResult)
@@ -52,29 +57,39 @@ class DefaultCompilerService(
         }
     }
 
-    private fun publishDiagnostics(sources: List<Source>, compileResult: CompileResult) {
+    private fun publishDiagnostics(
+        sources: List<Source>,
+        compileResult: CompileResult,
+    ) {
         val compilerExceptions = compileResult.warnings + (compileResult as? CompileFailure)?.errors.orEmpty()
         val exceptionsByUri = compilerExceptions.groupBy { it.sourceInfo.location.toURI() }
 
         sources.forEach { source ->
             val uri = source.location.toURI().toString()
-            val diagnostics = exceptionsByUri[source.location.toURI()]
-                ?.map { createDiagnostic(it) }
-                .orEmpty()
+            val diagnostics =
+                exceptionsByUri[source.location.toURI()]
+                    ?.map { createDiagnostic(it) }
+                    .orEmpty()
 
             clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, diagnostics))
         }
     }
 
     private fun publishCaughtExceptionDiagnostic(compileException: CompileException) {
-        val uri = compileException.sourceInfo.location.toURI().toString()
+        val uri =
+            compileException.sourceInfo.location
+                .toURI()
+                .toString()
         val diagnostic = createDiagnostic(compileException)
         clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, listOf(diagnostic)))
     }
 
     private fun createPathFromUri(uri: String) = Paths.get(URI.create(uri))
 
-    override fun updateSource(uri: String, content: String) {
+    override fun updateSource(
+        uri: String,
+        content: String,
+    ) {
         val path = createPathFromUri(uri)
         if (path.extension == NPL_FILE_EXTENSION) {
             sources[uri] = Source(path, content)
@@ -101,20 +116,23 @@ class DefaultCompilerService(
 
     private fun createDiagnostic(compileException: CompileException): Diagnostic {
         val snippetLines = compileException.sourceInfo.snippet.split("\n")
-        val startPosition = Position(
-            compileException.sourceInfo.line - 1,
-            compileException.sourceInfo.column - 1,
-        )
-        val endPosition = Position(
-            compileException.sourceInfo.line + snippetLines.size - 1,
-            compileException.sourceInfo.column + snippetLines.last().length - 1,
-        )
+        val startPosition =
+            Position(
+                compileException.sourceInfo.line - 1,
+                compileException.sourceInfo.column - 1,
+            )
+        val endPosition =
+            Position(
+                compileException.sourceInfo.line + snippetLines.size - 1,
+                compileException.sourceInfo.column + snippetLines.last().length - 1,
+            )
         val range = Range(startPosition, endPosition)
 
-        val severity = when (compileException) {
-            is CompileWarningException -> DiagnosticSeverity.Warning
-            else -> DiagnosticSeverity.Error
-        }
+        val severity =
+            when (compileException) {
+                is CompileWarningException -> DiagnosticSeverity.Warning
+                else -> DiagnosticSeverity.Error
+            }
 
         return Diagnostic(range, compileException.messageText, severity, "NPL compiler", compileException.code)
     }

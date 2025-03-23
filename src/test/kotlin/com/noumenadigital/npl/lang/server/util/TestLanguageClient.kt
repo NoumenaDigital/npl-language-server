@@ -23,7 +23,9 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-class TestLanguageClient(private val expectedDiagnosticsCount: Int = 1) : LanguageClient {
+class TestLanguageClient(
+    private val expectedDiagnosticsCount: Int = 1,
+) : LanguageClient {
     private lateinit var server: LanguageServer
     private val receivedMessages = mutableListOf<MessageParams>()
     private val allDiagnostics = mutableListOf<PublishDiagnosticsParams>()
@@ -44,19 +46,27 @@ class TestLanguageClient(private val expectedDiagnosticsCount: Int = 1) : Langua
         return future
     }
 
-    private fun createDefaultParams(): InitializeParams = InitializeParams().apply {
-        clientInfo = ClientInfo("Test Client", "1.0.0")
-        capabilities = ClientCapabilities().apply {
-            textDocument = TextDocumentClientCapabilities()
+    private fun createDefaultParams(): InitializeParams =
+        InitializeParams().apply {
+            clientInfo = ClientInfo("Test Client", "1.0.0")
+            capabilities =
+                ClientCapabilities().apply {
+                    textDocument = TextDocumentClientCapabilities()
+                }
         }
-    }
 
-    fun openDocument(uri: String, @Language("NPL") text: String) {
+    fun openDocument(
+        uri: String,
+        @Language("NPL") text: String,
+    ) {
         val item = TextDocumentItem(uri, "npl", 1, text)
         server.textDocumentService.didOpen(DidOpenTextDocumentParams(item))
     }
 
-    fun changeDocument(uri: String, newText: String) {
+    fun changeDocument(
+        uri: String,
+        newText: String,
+    ) {
         val identifier = VersionedTextDocumentIdentifier(uri, 2)
         val contentChange = TextDocumentContentChangeEvent(newText)
         server.textDocumentService.didChange(
@@ -68,12 +78,15 @@ class TestLanguageClient(private val expectedDiagnosticsCount: Int = 1) : Langua
 
     fun clearDiagnostics() = synchronized(allDiagnostics) { allDiagnostics.clear() }
 
-    fun waitForDiagnostics(timeout: Long = defaultTimeoutSeconds, unit: TimeUnit = TimeUnit.SECONDS): Boolean =
-        diagnosticsLatch.await(timeout, unit)
+    fun waitForDiagnostics(
+        timeout: Long = defaultTimeoutSeconds,
+        unit: TimeUnit = TimeUnit.SECONDS,
+    ): Boolean = diagnosticsLatch.await(timeout, unit)
 
-    fun hasDiagnosticsForUri(normalizedUri: String): Boolean = synchronized(allDiagnostics) {
-        return allDiagnostics.any { normalizeUri(it.uri) == normalizeUri(normalizedUri) }
-    }
+    fun hasDiagnosticsForUri(normalizedUri: String): Boolean =
+        synchronized(allDiagnostics) {
+            return allDiagnostics.any { normalizeUri(it.uri) == normalizeUri(normalizedUri) }
+        }
 
     fun verifyDiagnosticsContain(
         uri: String,
@@ -90,16 +103,19 @@ class TestLanguageClient(private val expectedDiagnosticsCount: Int = 1) : Langua
         )
     }
 
-    private fun getDiagnosticsForUri(normalizedUri: String): List<Diagnostic> = synchronized(allDiagnostics) {
-        return allDiagnostics
-            .filter { normalizeUri(it.uri) == normalizeUri(normalizedUri) }
-            .flatMap { it.diagnostics }
-    }
+    private fun getDiagnosticsForUri(normalizedUri: String): List<Diagnostic> =
+        synchronized(allDiagnostics) {
+            return allDiagnostics
+                .filter { normalizeUri(it.uri) == normalizeUri(normalizedUri) }
+                .flatMap { it.diagnostics }
+        }
 
     fun shutdown(): CompletableFuture<Any> = server.shutdown()
+
     fun exit() = server.exit()
 
     override fun telemetryEvent(`object`: Any?) {}
+
     override fun publishDiagnostics(diagnostics: PublishDiagnosticsParams?) {
         diagnostics?.let { params ->
             synchronized(allDiagnostics) {

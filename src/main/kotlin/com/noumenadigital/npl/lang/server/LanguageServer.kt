@@ -35,17 +35,22 @@ class LanguageServer(
     private val clientProvider: LanguageClientProvider = LanguageClientProvider(),
     private val compilerServiceFactory: (LanguageClientProvider) -> CompilerService = ::DefaultCompilerService,
     private val systemExitHandler: SystemExitHandler = DefaultSystemExitHandler(),
-) : LanguageServer, LanguageClientAware {
+) : LanguageServer,
+    LanguageClientAware {
     private val compilerService by lazy { compilerServiceFactory(clientProvider) }
 
     private val textDocumentService = TextDocumentHandler()
     private val workspaceService = WorkspaceHandler()
 
     override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> {
-        val capabilities = ServerCapabilities().apply {
-            textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
-        }
-        params.workspaceFolders?.singleOrNull()?.uri?.let { preloadSources(it) }
+        val capabilities =
+            ServerCapabilities().apply {
+                textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
+            }
+        params.workspaceFolders
+            ?.singleOrNull()
+            ?.uri
+            ?.let { preloadSources(it) }
         return completedFuture(InitializeResult(capabilities))
     }
 
@@ -53,9 +58,7 @@ class LanguageServer(
         compilerService.preloadSources(nplRootUri)
     }
 
-    override fun shutdown(): CompletableFuture<Any> {
-        return completedFuture(null)
-    }
+    override fun shutdown(): CompletableFuture<Any> = completedFuture(null)
 
     override fun exit() {
         systemExitHandler.exit(0)
@@ -91,6 +94,7 @@ class LanguageServer(
 
     inner class WorkspaceHandler : WorkspaceService {
         override fun didChangeConfiguration(params: DidChangeConfigurationParams?) {}
+
         override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams?) {}
     }
 }

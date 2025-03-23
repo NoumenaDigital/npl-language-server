@@ -48,16 +48,18 @@ class LanguageServerIntegrationTest : FunSpec() {
                     val client = TestLanguageClient()
                     clientProvider.client = client
 
-                    val compilerServiceSpy = CompilerServiceSpy(
-                        DefaultCompilerService(clientProvider),
-                    )
+                    val compilerServiceSpy =
+                        CompilerServiceSpy(
+                            DefaultCompilerService(clientProvider),
+                        )
 
                     val exitHandler = SafeSystemExitHandler()
-                    val server = createTestServer(
-                        systemExitHandler = exitHandler,
-                        clientProvider = clientProvider,
-                        compilerServiceFactory = { compilerServiceSpy },
-                    )
+                    val server =
+                        createTestServer(
+                            systemExitHandler = exitHandler,
+                            clientProvider = clientProvider,
+                            compilerServiceFactory = { compilerServiceSpy },
+                        )
 
                     (server as LanguageClientAware).connect(client)
                     client.connect(server)
@@ -138,36 +140,39 @@ class LanguageServerIntegrationTest : FunSpec() {
             test("reports errors when a referenced type is renamed in another file") {
                 withLanguageServer { client ->
                     val structFileUri = "file:///test/bar/Bar.npl"
-                    val structCode = """
+                    val structCode =
+                        """
                         package bar
 
                         struct Bar {
                             amount: Number
                         }
-                    """.trimIndent()
+                        """.trimIndent()
 
                     val usageFileUri = "file:///test/foo/Foo.npl"
                     val normalizedUsageUri = normalizeUri(usageFileUri)
-                    val usageCode = """
+                    val usageCode =
+                        """
                         package foo
 
                         use bar.Bar
 
                         function foo() -> Bar(1000);
-                    """.trimIndent()
+                        """.trimIndent()
 
                     client.openDocument(structFileUri, structCode)
                     client.openDocument(usageFileUri, usageCode)
 
                     client.clearDiagnostics()
 
-                    val updatedStructCode = """
+                    val updatedStructCode =
+                        """
                         package bar
 
                         struct BarX {
                             amount: Number
                         }
-                    """.trimIndent()
+                        """.trimIndent()
 
                     client.expectDiagnostics()
                     client.changeDocument(structFileUri, updatedStructCode)
@@ -192,20 +197,29 @@ class LanguageServerIntegrationTest : FunSpec() {
         }
 
         test("custom compiler service can be provided") {
-            val mockService = object : CompilerService {
-                override fun updateSource(uri: String, content: String) {}
-                override fun preloadSources(nplRootUri: String) {}
-            }
+            val mockService =
+                object : CompilerService {
+                    override fun updateSource(
+                        uri: String,
+                        content: String,
+                    ) {}
 
-            val server = createTestServer(
-                compilerServiceFactory = { mockService },
-            )
+                    override fun preloadSources(nplRootUri: String) {}
+                }
+
+            val server =
+                createTestServer(
+                    compilerServiceFactory = { mockService },
+                )
 
             server shouldNotBe null
         }
     }
 
-    private fun <T> withTempDirectory(prefix: String, block: (Path) -> T): T {
+    private fun <T> withTempDirectory(
+        prefix: String,
+        block: (Path) -> T,
+    ): T {
         val tempDir = Files.createTempDirectory(prefix)
         try {
             return block(tempDir)
@@ -214,29 +228,39 @@ class LanguageServerIntegrationTest : FunSpec() {
         }
     }
 
-    private fun createNplFile(directory: Path, name: String, @Language("NPL") content: String): Path {
+    private fun createNplFile(
+        directory: Path,
+        name: String,
+        @Language("NPL") content: String,
+    ): Path {
         val file = directory.resolve(name)
         return Files.writeString(file, content)
     }
 
-    private fun createParams(workspaceUri: String? = null) = InitializeParams().apply {
-        clientInfo = ClientInfo("Test Client", "1.0.0")
-        capabilities = ClientCapabilities().apply {
-            textDocument = TextDocumentClientCapabilities()
-        }
+    private fun createParams(workspaceUri: String? = null) =
+        InitializeParams().apply {
+            clientInfo = ClientInfo("Test Client", "1.0.0")
+            capabilities =
+                ClientCapabilities().apply {
+                    textDocument = TextDocumentClientCapabilities()
+                }
 
-        if (workspaceUri != null) {
-            workspaceFolders = listOf(WorkspaceFolder(workspaceUri, "NPL Test Workspace"))
+            if (workspaceUri != null) {
+                workspaceFolders = listOf(WorkspaceFolder(workspaceUri, "NPL Test Workspace"))
+            }
         }
-    }
 }
 
-class CompilerServiceSpy(private val delegate: CompilerService) : CompilerService {
+class CompilerServiceSpy(
+    private val delegate: CompilerService,
+) : CompilerService {
     var preloadSourcesCalled = false
     var preloadedUri: String? = null
 
-    override fun updateSource(uri: String, content: String) =
-        delegate.updateSource(uri, content)
+    override fun updateSource(
+        uri: String,
+        content: String,
+    ) = delegate.updateSource(uri, content)
 
     override fun preloadSources(nplRootUri: String) {
         preloadSourcesCalled = true

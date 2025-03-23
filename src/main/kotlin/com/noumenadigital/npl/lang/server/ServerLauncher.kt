@@ -9,7 +9,8 @@ import java.net.ServerSocket
 private val logger = KotlinLogging.logger { }
 
 enum class ServerMode {
-    TCP, STDIO
+    TCP,
+    STDIO,
 }
 
 data class ServerConfig(
@@ -19,9 +20,15 @@ data class ServerConfig(
 
 interface ServerLauncher {
     fun launchTcpServer(port: Int)
+
     fun launchStdioServer()
 
-    fun startServer(languageServer: LanguageServer, input: InputStream, output: OutputStream)
+    fun startServer(
+        languageServer: LanguageServer,
+        input: InputStream,
+        output: OutputStream,
+    )
+
     fun createLanguageServer(): LanguageServer = LanguageServer()
 }
 
@@ -44,7 +51,11 @@ class DefaultServerLauncher : ServerLauncher {
         startServer(languageServer, System.`in`, System.out)
     }
 
-    override fun startServer(languageServer: LanguageServer, input: InputStream, output: OutputStream) {
+    override fun startServer(
+        languageServer: LanguageServer,
+        input: InputStream,
+        output: OutputStream,
+    ) {
         val launcher = LSPLauncher.createServerLauncher(languageServer, input, output)
         launcher.startListening()
         languageServer.connect(launcher.remoteProxy)
