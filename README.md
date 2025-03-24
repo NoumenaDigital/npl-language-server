@@ -9,13 +9,11 @@ The language server can operate in two modes:
 - TCP mode: Listens on a specified port (default: 5007)
 - STDIO mode: Communicates through standard input/output
 
-## Development
-
-### Setup
+## Setup
 
 You'll need Maven and Java 21 (graalvm if you want to build binaries) or later installed on your system.
 
-### Build project and run tests
+## Build project and run tests
 
 ```bash
 mvn clean verify
@@ -46,6 +44,66 @@ To test the language server with VS Code:
 4. Test functionality:
    - Open an NPL project (such as npl-starter)
    - Make changes to NPL files and interact with your codebase
+
+## Automated checks and formatting
+
+You can use `pre-commit` to run some automated checks as well as Kotlin (ktlint) and Markdown formatting whenever you
+commit something.
+
+```shell
+brew install pre-commit
+pre-commit install
+```
+
+The checks can be bypassed by running `git commit -n` or `git commit --no-verify`
+
+### detect-secrets
+
+Enforces accidental secret commits with a pre-commit hook using Yelp's detect-secrets tool. The pre-commit hook will
+scan staged changes for potential secrets before allowing a commit. If any secrets are detected above baseline, the
+commit will be aborted, ensuring that no sensitive information is pushed to the repository.
+
+No need to install locally, just make sure you have the pre-commit hook installed.
+
+To check locally:
+
+```shell
+pre-commit run detect-secrets --all-files
+```
+
+To generate a new baseline, install the version of `detect-secrets` that's configured in `.pre-commit-config.yaml`
+locally (using `pip` or `brew` -- just double check that you have the right version) and run:
+
+```shell
+detect-secrets scan > .secrets.baseline
+```
+
+### ktlint
+
+This project enforces a standard code formatting style using [ktlint](https://github.com/pinterest/ktlint) via the
+automatic `pretty-format-kotlin` [pre-commit hook](https://github.com/macisamuele/language-formatters-pre-commit-hooks).
+
+The `pretty-format-kotlin` hook automatically formats Kotlin code with ktlint rules before committing it.
+
+You can run ktlint for the entire project using the `pre-commit` like so:
+
+```shell
+pre-commit run pretty-format-kotlin --all-files
+```
+
+### prettier
+
+We use [prettier](https://prettier.io) to format our Markdown. The configuration is found in
+[.prettierrc.yml](.prettierrc.yml).
+
+To format all Markdown files in the project, run (needed if e.g. the corresponding job is failing):
+
+```shell
+pre-commit run prettier --all-files
+```
+
+Note that `prettier` formats tables differently than IntelliJ, so you might want to disable IntelliJ's
+`Incorrect table formatting` Markdown inspection.
 
 ## Native Image Build
 
@@ -98,64 +156,3 @@ If you encounter issues with the native image, you may need to manually modify t
 to the
 [GraalVM documentation](https://www.graalvm.org/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/)
 for more information on native image configuration.
-
-### Automated checks and formatting
-
-You can use `pre-commit` to run some automated checks as well as Kotlin (ktlint) and Markdown formatting whenever you
-commit something.
-
-```shell
-brew install pre-commit
-pre-commit install
-```
-
-The checks can be bypassed by running `git commit -n` or `git commit --no-verify`
-
-#### detect-secrets
-
-Enforces accidental secret commits with a pre-commit hook using Yelp's detect-secrets tool. The pre-commit hook will
-scan staged changes for potential secrets before allowing a commit. If any secrets are detected above baseline, the
-commit will be aborted, ensuring that no sensitive information is pushed to the repository.
-
-No need to install locally, just make sure you have the pre-commit hook installed.
-
-To check locally:
-
-```shell
-pre-commit run detect-secrets --all-files
-```
-
-To generate a new baseline, install the version of `detect-secrets` that's configured in `.pre-commit-config.yaml`
-locally (using `pip` or `brew` -- just double check that you have the right version) and run:
-
-```shell
-detect-secrets scan > .secrets.baseline
-```
-
-#### ktlint
-
-This project enforces a standard code formatting style using [ktlint](https://github.com/pinterest/ktlint) via the
-automatic `pretty-format-kotlin` [pre-commit hook](https://github.com/macisamuele/language-formatters-pre-commit-hooks).
-
-The `pretty-format-kotlin` hook automatically formats Kotlin code with ktlint rules before committing it.
-[See](#automated-checks-and-markdown-formatting) for more details.
-
-You can run ktlint for the entire project using the `pre-commit` like so:
-
-```shell
-pre-commit run pretty-format-kotlin --all-files
-```
-
-#### prettier
-
-We use [prettier](https://prettier.io) to format our Markdown. The configuration is found in
-[.prettierrc.yml](.prettierrc.yml).
-
-To format all Markdown files in the project, run (needed if e.g. the corresponding job is failing):
-
-```shell
-pre-commit run prettier --all-files
-```
-
-Note that `prettier` formats tables differently than IntelliJ, so you might want to disable IntelliJ's
-`Incorrect table formatting` Markdown inspection.
