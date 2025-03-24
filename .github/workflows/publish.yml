@@ -53,14 +53,14 @@ jobs:
         run: |
           # Set environment variable for force release
           export FORCE_RELEASE="${{ github.event.inputs.force_release }}"
-          
+
           # Run the script and capture its output
           OUTPUT=$(.github/scripts/check-release-flag.sh)
-          
+
           # Extract the should_release value and set as output
           SHOULD_RELEASE=$(echo "$OUTPUT" | grep "should_release=" | cut -d= -f2)
           echo "should_release=$SHOULD_RELEASE" >> $GITHUB_OUTPUT
-          
+
           # Display the full output for debugging
           echo "$OUTPUT"
 

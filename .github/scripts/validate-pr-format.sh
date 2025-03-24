@@ -24,6 +24,7 @@ if echo "$PR_BODY" | grep -q "^Release: true$" || echo "$PR_BODY" | grep -q "^Re
   :
 else
   echo "Error: PR description must include a line with exactly 'Release: true' or 'Release: false'."
+  echo "Note: Make sure there are no trailing whitespace characters after 'true' or 'false'."
   exit 1
 fi
 

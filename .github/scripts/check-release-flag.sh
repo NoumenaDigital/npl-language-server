@@ -21,4 +21,4 @@ elif [[ "$COMMIT_MSG" == *"Release: false"* ]]; then
 else
   echo "should_release=false"
   echo "No Release trailer found in commit message - skipping release"
-fi 
+fi
