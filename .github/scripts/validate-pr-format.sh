@@ -10,10 +10,12 @@ if [[ "$PR_BODY" == *"<!-- Description of the PR changes -->"* ]]; then
   exit 1
 fi
 
-# Check Ticket format
-if ! echo "$PR_BODY" | grep -q "^Ticket: ST-[0-9]*$"; then
-  echo "Error: Ticket format is invalid. Should be 'Ticket: ST-XXXX' on its own line where XXXX are numbers."
-  exit 1
+# Check Ticket format if present
+if echo "$PR_BODY" | grep -q "Ticket:"; then
+  if ! echo "$PR_BODY" | grep -q "^Ticket: ST-[0-9]*$"; then
+    echo "Error: Ticket format is invalid. Should be 'Ticket: ST-XXXX' on its own line where XXXX are numbers."
+    exit 1
+  fi
 fi
 
 # Check Release value
