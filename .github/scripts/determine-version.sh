@@ -19,13 +19,13 @@ if [ "$CURRENT_PLATFORM_VERSION" = "$PREVIOUS_PLATFORM_VERSION" ] && [ -n "$GITH
   # Get existing releases
   API_RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
     "https://api.github.com/repos/NoumenaDigital/npl-language-server/releases")
-  
+
   # Continue only if API call was successful
   if [ -n "$API_RESPONSE" ] && [[ "$API_RESPONSE" != *"Bad credentials"* ]] && [[ "$API_RESPONSE" == \[* ]]; then
     # Get releases matching current platform version
     LATEST_RELEASE=$(echo "$API_RESPONSE" | \
       jq -r "[.[] | select(.tag_name | startswith(\"$CURRENT_PLATFORM_VERSION\")) | .tag_name] | sort_by(split(\"-\")[1] | if . == null then 0 else tonumber end) | last // \"\"")
-    
+
     # Only add/increment suffix if we already have a release for this platform version
     if [ -n "$LATEST_RELEASE" ] && [ "$LATEST_RELEASE" != "null" ]; then
       if [ "$LATEST_RELEASE" = "$CURRENT_PLATFORM_VERSION" ]; then
@@ -47,4 +47,4 @@ RELEASE_NAME="NPL Language Server $RELEASE_TAG"
 echo "release_tag=$RELEASE_TAG"
 echo "release_name=$RELEASE_NAME"
 export release_tag=$RELEASE_TAG
-export release_name=$RELEASE_NAME 
+export release_name=$RELEASE_NAME

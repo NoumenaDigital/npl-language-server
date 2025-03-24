@@ -9,7 +9,6 @@ import org.eclipse.lsp4j.Range
 import org.intellij.lang.annotations.Language
 
 object DiagnosticTestUtils {
-
     data class ExpectedDiagnostic(
         val snippet: String,
         val code: Int,
@@ -36,25 +35,29 @@ object DiagnosticTestUtils {
             return
         }
 
-        val actualDiagnosticDetails = diagnostics.map { diagnostic ->
-            val snippet = normalizeSnippet(extractSnippetFromRange(sourceCode, diagnostic.range))
-            val code = if (diagnostic.code.isLeft) diagnostic.code.left.toInt() else diagnostic.code.right
-            ExpectedDiagnostic(
-                snippet = snippet,
-                code = code,
-                message = diagnostic.message,
-                severity = diagnostic.severity,
-            )
-        }.toSet()
+        val actualDiagnosticDetails =
+            diagnostics
+                .map { diagnostic ->
+                    val snippet = normalizeSnippet(extractSnippetFromRange(sourceCode, diagnostic.range))
+                    val code = if (diagnostic.code.isLeft) diagnostic.code.left.toInt() else diagnostic.code.right
+                    ExpectedDiagnostic(
+                        snippet = snippet,
+                        code = code,
+                        message = diagnostic.message,
+                        severity = diagnostic.severity,
+                    )
+                }.toSet()
 
-        val expectedDiagnosticSet = expectedDiagnostics.map { expected ->
-            ExpectedDiagnostic(
-                snippet = normalizeSnippet(expected.snippet),
-                code = expected.code,
-                message = expected.message,
-                severity = expected.severity,
-            )
-        }.toSet()
+        val expectedDiagnosticSet =
+            expectedDiagnostics
+                .map { expected ->
+                    ExpectedDiagnostic(
+                        snippet = normalizeSnippet(expected.snippet),
+                        code = expected.code,
+                        message = expected.message,
+                        severity = expected.severity,
+                    )
+                }.toSet()
 
         actualDiagnosticDetails shouldBe expectedDiagnosticSet
     }
@@ -68,7 +71,10 @@ object DiagnosticTestUtils {
         }
     }
 
-    private fun extractSnippetFromRange(sourceCode: String, range: Range): String {
+    private fun extractSnippetFromRange(
+        sourceCode: String,
+        range: Range,
+    ): String {
         val lines = sourceCode.lines()
 
         val startLine = range.start.line.coerceIn(0, lines.size - 1)

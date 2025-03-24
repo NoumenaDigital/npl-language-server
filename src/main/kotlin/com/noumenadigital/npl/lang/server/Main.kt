@@ -15,10 +15,11 @@ fun parseArgs(args: Array<String>): ServerConfig {
     val stdioMode = args.contains("--stdio")
     val port = args.find { it.startsWith("--port=") }?.substringAfter("=")?.toInt() ?: DEFAULT_TCP_PORT
 
-    val mode = when {
-        stdioMode -> ServerMode.STDIO
-        else -> ServerMode.TCP
-    }
+    val mode =
+        when {
+            stdioMode -> ServerMode.STDIO
+            else -> ServerMode.TCP
+        }
 
     return ServerConfig(
         mode = mode,
@@ -26,7 +27,10 @@ fun parseArgs(args: Array<String>): ServerConfig {
     )
 }
 
-fun launchServer(config: ServerConfig, launcher: ServerLauncher = DefaultServerLauncher()) {
+fun launchServer(
+    config: ServerConfig,
+    launcher: ServerLauncher = DefaultServerLauncher(),
+) {
     when (config.mode) {
         ServerMode.TCP -> {
             val port = config.tcpPort ?: DEFAULT_TCP_PORT

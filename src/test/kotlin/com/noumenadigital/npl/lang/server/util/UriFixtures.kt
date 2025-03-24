@@ -18,7 +18,9 @@ object UriFixtures {
         }
     }
 
-    private fun createTestFile(@Language("NPL") code: String): String {
+    private fun createTestFile(
+        @Language("NPL") code: String,
+    ): String {
         val tempFile = Files.createTempFile("test", ".npl")
         Files.writeString(tempFile, code)
         tempFile.toFile().deleteOnExit()

@@ -21,9 +21,7 @@ object LanguageServerFixtures {
         compilerServiceFactory = compilerServiceFactory,
     )
 
-    fun withLanguageServer(
-        test: (TestLanguageClient) -> Unit,
-    ) {
+    fun withLanguageServer(test: (TestLanguageClient) -> Unit) {
         val client = TestLanguageClient()
         val exitHandler = SafeSystemExitHandler()
         val server = createTestServer(systemExitHandler = exitHandler)

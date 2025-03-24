@@ -18,78 +18,83 @@ import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageClientAware
 
-class LanguageServerTest : FunSpec({
-    context("Server lifecycle") {
-        test("initialization") {
-            val compilerMock = mockk<CompilerService>(relaxed = true)
-            val server = createTestServer(
-                compilerServiceFactory = { compilerMock },
-            )
+class LanguageServerTest :
+    FunSpec({
+        context("Server lifecycle") {
+            test("initialization") {
+                val compilerMock = mockk<CompilerService>(relaxed = true)
+                val server =
+                    createTestServer(
+                        compilerServiceFactory = { compilerMock },
+                    )
 
-            val workspaceFolder = WorkspaceFolder("file:///test/workspace", "Test")
-            val params = InitializeParams().apply {
-                workspaceFolders = listOf(workspaceFolder)
+                val workspaceFolder = WorkspaceFolder("file:///test/workspace", "Test")
+                val params =
+                    InitializeParams().apply {
+                        workspaceFolders = listOf(workspaceFolder)
+                    }
+
+                val result = server.initialize(params).get()
+
+                result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
+                verify { compilerMock.preloadSources("file:///test/workspace") }
             }
 
-            val result = server.initialize(params).get()
+            test("exit") {
+                val systemExitHandler = SafeSystemExitHandler()
+                val server = createTestServer(systemExitHandler = systemExitHandler)
 
-            result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
-            verify { compilerMock.preloadSources("file:///test/workspace") }
+                server.exit()
+
+                systemExitHandler.exitCalled shouldBe true
+                systemExitHandler.statusCode shouldBe 0
+            }
         }
 
-        test("exit") {
-            val systemExitHandler = SafeSystemExitHandler()
-            val server = createTestServer(systemExitHandler = systemExitHandler)
+        context("Document handling") {
+            test("didOpen updates compiler service") {
+                val compilerMock = mockk<CompilerService>(relaxed = true)
+                val server =
+                    createTestServer(
+                        compilerServiceFactory = { compilerMock },
+                    )
 
-            server.exit()
+                server.initialize(InitializeParams()).get()
 
-            systemExitHandler.exitCalled shouldBe true
-            systemExitHandler.statusCode shouldBe 0
+                val document = TextDocumentItem("file:///test.npl", "npl", 1, "test content")
+                server.textDocumentService.didOpen(DidOpenTextDocumentParams(document))
+
+                verify { compilerMock.updateSource("file:///test.npl", "test content") }
+            }
+
+            test("didChange updates compiler service") {
+                val compilerMock = mockk<CompilerService>(relaxed = true)
+                val server =
+                    createTestServer(
+                        compilerServiceFactory = { compilerMock },
+                    )
+
+                server.initialize(InitializeParams()).get()
+
+                val docIdentifier = VersionedTextDocumentIdentifier("file:///test.npl", 2)
+                val changeEvent = TextDocumentContentChangeEvent("updated content")
+                server.textDocumentService.didChange(
+                    DidChangeTextDocumentParams(docIdentifier, listOf(changeEvent)),
+                )
+
+                verify { compilerMock.updateSource("file:///test.npl", "updated content") }
+            }
         }
-    }
 
-    context("Document handling") {
-        test("didOpen updates compiler service") {
-            val compilerMock = mockk<CompilerService>(relaxed = true)
-            val server = createTestServer(
-                compilerServiceFactory = { compilerMock },
-            )
+        context("Client interaction") {
+            test("connect sets client") {
+                val clientProvider = LanguageClientProvider()
+                val server = createTestServer(clientProvider = clientProvider)
+                val clientMock = mockk<LanguageClient>()
 
-            server.initialize(InitializeParams()).get()
+                (server as LanguageClientAware).connect(clientMock)
 
-            val document = TextDocumentItem("file:///test.npl", "npl", 1, "test content")
-            server.textDocumentService.didOpen(DidOpenTextDocumentParams(document))
-
-            verify { compilerMock.updateSource("file:///test.npl", "test content") }
+                clientProvider.client shouldBe clientMock
+            }
         }
-
-        test("didChange updates compiler service") {
-            val compilerMock = mockk<CompilerService>(relaxed = true)
-            val server = createTestServer(
-                compilerServiceFactory = { compilerMock },
-            )
-
-            server.initialize(InitializeParams()).get()
-
-            val docIdentifier = VersionedTextDocumentIdentifier("file:///test.npl", 2)
-            val changeEvent = TextDocumentContentChangeEvent("updated content")
-            server.textDocumentService.didChange(
-                DidChangeTextDocumentParams(docIdentifier, listOf(changeEvent)),
-            )
-
-            verify { compilerMock.updateSource("file:///test.npl", "updated content") }
-        }
-    }
-
-    context("Client interaction") {
-        test("connect sets client") {
-            val clientProvider = LanguageClientProvider()
-            val server = createTestServer(clientProvider = clientProvider)
-            val clientMock = mockk<LanguageClient>()
-
-            (server as LanguageClientAware).connect(clientMock)
-
-            clientProvider.client shouldBe clientMock
-        }
-    }
-})
+    })

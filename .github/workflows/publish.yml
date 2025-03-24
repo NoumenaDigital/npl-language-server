@@ -76,10 +76,10 @@ jobs:
             echo "release_name=${{ github.event.inputs.release_name || format('NPL Language Server {0}', github.event.inputs.release_tag) }}" >> $GITHUB_OUTPUT
             exit 0
           fi
-          
+
           # Run the version determination script
           source .github/scripts/determine-version.sh
-          
+
           # Copy the script output to GitHub Actions outputs
           echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
           echo "release_name=$release_name" >> $GITHUB_OUTPUT
