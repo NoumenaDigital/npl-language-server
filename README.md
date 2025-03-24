@@ -1,6 +1,6 @@
 # NPL Language Server
 
-This module implements a Language Server Protocol (LSP) server for NPL.
+This module implements a Language Server Protocol (LSP) server for Noumena Protocol Language (NPL).
 
 ## Overview
 
