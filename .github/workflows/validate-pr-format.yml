@@ -25,4 +25,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Validate PR description"
-        run: .github/scripts/validate-pr.sh 
+        run: .github/scripts/validate-pr-format.sh 
