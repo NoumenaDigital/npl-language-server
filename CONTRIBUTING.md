@@ -27,6 +27,13 @@ Our repository uses automated workflows to validate pull requests. These workflo
 
 **Important**: Workflows will only run after a CODEOWNER has approved the PR. This is a security measure to protect our CI/CD infrastructure.
 
+#### PR description trailers
+
+PR descriptions *should* contain a line containing either `Release: true` or `Release: false`. It should be set to `true`
+if the PR contains new features or fixes that are relevant to users.
+
+An optional `Ticket: ST-XXXX` trailer referencing an internal JIRA ticket can also be specified.
+
 ## Development Process
 
 1. Fork the repository
