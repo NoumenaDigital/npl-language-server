@@ -28,7 +28,7 @@
     </scm>
 
     <properties>
-        <platform.version>2025.1.1</platform.version>
+        <platform.version>2025.1.2</platform.version>
         <kotlin.version>2.1.10</kotlin.version>
         <kotest.version>5.9.1</kotest.version>
         <java.version>17</java.version>
