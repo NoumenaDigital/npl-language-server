@@ -12,14 +12,17 @@ fi
 
 # Check Ticket format if present
 if echo "$PR_BODY" | grep -q "Ticket:"; then
-  if ! echo "$PR_BODY" | grep -q "^Ticket: ST-[0-9]*$"; then
+  # Remove carriage returns before checking
+  if ! echo "$PR_BODY" | tr -d '\r' | grep -q "^Ticket: ST-[0-9]*$"; then
     echo "Error: Ticket format is invalid. Should be 'Ticket: ST-XXXX' on its own line where XXXX are numbers."
     exit 1
   fi
 fi
 
 # Check Release value
-if echo "$PR_BODY" | grep -q "^Release: true$" || echo "$PR_BODY" | grep -q "^Release: false$"; then
+# Remove carriage returns before checking
+PR_BODY_UNIX=$(echo "$PR_BODY" | tr -d '\r')
+if echo "$PR_BODY_UNIX" | grep -q "^Release: true$" || echo "$PR_BODY_UNIX" | grep -q "^Release: false$"; then
   # Valid format found
   :
 else
