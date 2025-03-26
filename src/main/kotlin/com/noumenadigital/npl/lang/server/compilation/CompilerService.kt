@@ -8,18 +8,20 @@ import com.noumenadigital.npl.lang.CompilerConfiguration
 import com.noumenadigital.npl.lang.Loader
 import com.noumenadigital.npl.lang.Source
 import com.noumenadigital.npl.lang.server.LanguageClientProvider
+import mu.KotlinLogging
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.Range
 import org.intellij.lang.annotations.Language
-import org.slf4j.LoggerFactory
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.extension
+
+private val logger = KotlinLogging.logger { }
 
 private const val NPL_FILE_EXTENSION = "npl"
 private const val TARGET_DIR_PATTERN = "/target/"
@@ -40,7 +42,6 @@ class DefaultCompilerService(
     private val modifiedSources = mutableSetOf<String>()
     private var lastCompileResult: CompileResult? = null
     private var workspacePaths: List<Path> = emptyList()
-    private val logger = LoggerFactory.getLogger(DefaultCompilerService::class.java)
 
     private fun compileIfNeeded() {
         if (modifiedSources.isEmpty() && lastCompileResult != null) return
