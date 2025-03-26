@@ -5,6 +5,8 @@ import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
 import com.noumenadigital.npl.lang.server.util.DiagnosticTestUtils
 import com.noumenadigital.npl.lang.server.util.LanguageServerFixtures.createTestServer
 import com.noumenadigital.npl.lang.server.util.LanguageServerFixtures.withLanguageServer
+import com.noumenadigital.npl.lang.server.util.NplFileFixtures.createNplFile
+import com.noumenadigital.npl.lang.server.util.NplFileFixtures.withTempDirectory
 import com.noumenadigital.npl.lang.server.util.SafeSystemExitHandler
 import com.noumenadigital.npl.lang.server.util.TestLanguageClient
 import com.noumenadigital.npl.lang.server.util.UriFixtures.normalizeUri
@@ -18,9 +20,7 @@ import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.services.LanguageClientAware
-import org.intellij.lang.annotations.Language
 import java.nio.file.Files
-import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 class LanguageServerIntegrationTest : FunSpec() {
@@ -214,27 +214,6 @@ class LanguageServerIntegrationTest : FunSpec() {
 
             server shouldNotBe null
         }
-    }
-
-    private fun <T> withTempDirectory(
-        prefix: String,
-        block: (Path) -> T,
-    ): T {
-        val tempDir = Files.createTempDirectory(prefix)
-        try {
-            return block(tempDir)
-        } finally {
-            tempDir.toFile().deleteRecursively()
-        }
-    }
-
-    private fun createNplFile(
-        directory: Path,
-        name: String,
-        @Language("NPL") content: String,
-    ): Path {
-        val file = directory.resolve(name)
-        return Files.writeString(file, content)
     }
 
     private fun createParams(workspaceUri: String? = null) =
