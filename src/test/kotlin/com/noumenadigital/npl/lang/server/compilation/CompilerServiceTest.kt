@@ -3,11 +3,18 @@ package com.noumenadigital.npl.lang.server.compilation
 import com.noumenadigital.npl.lang.server.LanguageClientProvider
 import com.noumenadigital.npl.lang.server.util.DiagnosticTestUtils
 import com.noumenadigital.npl.lang.server.util.DiagnosticTestUtils.ExpectedDiagnostic
+import com.noumenadigital.npl.lang.server.util.NplFileFixtures.createNplFile
+import com.noumenadigital.npl.lang.server.util.NplFileFixtures.simpleValidCode
+import com.noumenadigital.npl.lang.server.util.NplFileFixtures.validCodeWithError
+import com.noumenadigital.npl.lang.server.util.NplFileFixtures.withNplTestFile
+import com.noumenadigital.npl.lang.server.util.NplFileFixtures.withTempDirectory
 import com.noumenadigital.npl.lang.server.util.TestLanguageClient
-import com.noumenadigital.npl.lang.server.util.UriFixtures.withNplTestFile
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.intellij.lang.annotations.Language
+import java.nio.file.Files
+import java.util.concurrent.TimeUnit
 
 class CompilerServiceTest :
     FunSpec({
@@ -203,6 +210,104 @@ class CompilerServiceTest :
                             ),
                     )
                 runDiagnosticTest(scenario)
+            }
+        }
+
+        context("Workspace folder validation") {
+            test("Files inside workspace should be compiled") {
+                withTempDirectory("workspace-test") { workspaceDir ->
+                    val testClient = TestLanguageClient(expectedDiagnosticsCount = 1)
+                    val clientProvider = LanguageClientProvider().apply { client = testClient }
+                    val service = DefaultCompilerService(clientProvider)
+
+                    val workspaceUri = workspaceDir.toUri().toString()
+                    service.preloadSources(workspaceUri)
+
+                    val fileUri = createNplFile(workspaceDir, "Valid.npl", validCodeWithError()).toUri().toString()
+
+                    testClient.expectDiagnostics()
+                    service.updateSource(fileUri, validCodeWithError())
+
+                    testClient.waitForDiagnostics(5, TimeUnit.SECONDS) shouldBe true
+                    testClient.diagnostics.flatMap { it.diagnostics }.isNotEmpty() shouldBe true
+                }
+            }
+
+            test("Files outside workspace should be ignored") {
+                withTempDirectory("workspace-test") { workspaceDir ->
+                    withTempDirectory("outside-dir") { outsideDir ->
+                        val testClient = TestLanguageClient(expectedDiagnosticsCount = 1)
+                        val clientProvider = LanguageClientProvider().apply { client = testClient }
+                        val service = DefaultCompilerService(clientProvider)
+
+                        service.preloadSources(workspaceDir.toUri().toString())
+
+                        val outsideFileUri =
+                            createNplFile(outsideDir, "Outside.npl", validCodeWithError())
+                                .toUri()
+                                .toString()
+
+                        service.updateSource(outsideFileUri, validCodeWithError())
+
+                        Thread.sleep(200)
+                        testClient.diagnostics.isEmpty() shouldBe true
+                    }
+                }
+            }
+
+            test("Files that move outside workspace should have diagnostics cleared") {
+                withTempDirectory("workspace-test") { workspaceDir ->
+                    withTempDirectory("outside-dir") { outsideDir ->
+                        val testClient = TestLanguageClient(expectedDiagnosticsCount = 0)
+                        val clientProvider = LanguageClientProvider().apply { client = testClient }
+                        val service = DefaultCompilerService(clientProvider)
+
+                        // Initial setup with file in workspace
+                        service.preloadSources(workspaceDir.toUri().toString())
+                        val fileUri =
+                            createNplFile(workspaceDir, "Moving.npl", validCodeWithError())
+                                .toUri()
+                                .toString()
+                        service.updateSource(fileUri, validCodeWithError())
+
+                        // Change workspace, making the file effectively outside
+                        service.preloadSources(outsideDir.toUri().toString())
+
+                        // Verify empty diagnostics were published
+                        Thread.sleep(200)
+                        testClient.diagnostics.any { it.uri == fileUri && it.diagnostics.isEmpty() } shouldBe true
+                    }
+                }
+            }
+
+            test("Only files in workspace should be preloaded") {
+                withTempDirectory("workspace-test") { workspaceDir ->
+                    withTempDirectory("outside-dir") { outsideDir ->
+                        // Setup test files
+                        createNplFile(workspaceDir, "Inside1.npl", simpleValidCode())
+                        createNplFile(workspaceDir, "Inside2.npl", simpleValidCode())
+                        createNplFile(
+                            workspaceDir.resolve("nested").also { Files.createDirectories(it) },
+                            "Nested.npl",
+                            simpleValidCode(),
+                        )
+
+                        createNplFile(outsideDir, "Outside1.npl", validCodeWithError())
+                        createNplFile(outsideDir, "Outside2.npl", validCodeWithError())
+
+                        // Track preloaded sources count
+                        var preloadedSources = 0
+                        val service = DefaultCompilerService(LanguageClientProvider())
+                        val field = DefaultCompilerService::class.java.getDeclaredField("sources")
+                        field.isAccessible = true
+
+                        service.preloadSources(workspaceDir.toUri().toString())
+                        preloadedSources = (field.get(service) as Map<*, *>).size
+
+                        // Should only load the 3 files inside workspace
+                        preloadedSources shouldBe 3
+                    }
+                }
             }
         }
     })

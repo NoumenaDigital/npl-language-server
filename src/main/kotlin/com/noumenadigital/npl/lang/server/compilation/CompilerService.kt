@@ -14,8 +14,10 @@ import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.Range
 import org.intellij.lang.annotations.Language
+import org.slf4j.LoggerFactory
 import java.net.URI
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.extension
 
@@ -37,11 +39,16 @@ class DefaultCompilerService(
     private val sources = mutableMapOf<String, Source>()
     private val modifiedSources = mutableSetOf<String>()
     private var lastCompileResult: CompileResult? = null
+    private var workspacePath: Path? = null
+    private val logger = LoggerFactory.getLogger(DefaultCompilerService::class.java)
 
     private fun compileIfNeeded() {
         if (modifiedSources.isEmpty() && lastCompileResult != null) return
 
-        val sourceList = sources.values.toList()
+        // Only compile sources within the workspace
+        val sourceList = sources.values.filter { isInWorkspace(Path.of(it.location.toURI())) }.toList()
+        if (sourceList.isEmpty()) return
+
         try {
             // TODO ST-4481: Improve error handling - the compiler should not throw exceptions for normal compilation errors.
             // Instead, errors should be part of the CompileResult and we should avoid try-catch for expected errors.
@@ -80,6 +87,8 @@ class DefaultCompilerService(
             compileException.sourceInfo.location
                 .toURI()
                 .toString()
+        if (!isInWorkspace(createPathFromUri(uri))) return
+
         val diagnostic = createDiagnostic(compileException)
         clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, listOf(diagnostic)))
     }
@@ -91,27 +100,63 @@ class DefaultCompilerService(
         content: String,
     ) {
         val path = createPathFromUri(uri)
-        if (path.extension == NPL_FILE_EXTENSION) {
+        if (path.extension != NPL_FILE_EXTENSION) return
+
+        if (isInWorkspace(path)) {
             sources[uri] = Source(path, content)
             modifiedSources.add(uri)
             compileIfNeeded()
+        } else if (sources.containsKey(uri)) {
+            // Clear diagnostics and remove file if outside workspace
+            sources.remove(uri)
+            clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, emptyList()))
         }
     }
 
     override fun preloadSources(nplRootUri: String) {
-        val rootPath = createPathFromUri(nplRootUri)
-        Files.walk(rootPath).use { pathStream ->
-            pathStream
-                .filter { Files.isRegularFile(it) && it.extension == NPL_FILE_EXTENSION }
-                .filter { !it.toRealPath().toString().contains(TARGET_DIR_PATTERN) }
-                .forEach { path ->
-                    val uri = path.toUri().toString()
-                    sources[uri] = Source(path, Files.readString(path))
-                    modifiedSources.add(uri)
-                }
-        }
+        // When workspace changes, we need to clear diagnostics for files that are no longer in workspace
+        val oldSources = sources.keys.toSet()
 
-        compileIfNeeded()
+        workspacePath = createPathFromUri(nplRootUri)
+        logger.info("Setting workspace: ${workspacePath?.toAbsolutePath()}")
+
+        sources.clear()
+        modifiedSources.clear()
+
+        try {
+            Files.walk(workspacePath).use { pathStream ->
+                pathStream
+                    .filter { Files.isRegularFile(it) && it.extension == NPL_FILE_EXTENSION }
+                    .filter { !it.toString().contains(TARGET_DIR_PATTERN) }
+                    .forEach { path ->
+                        val uri = path.toUri().toString()
+                        sources[uri] = Source(path, Files.readString(path))
+                        modifiedSources.add(uri)
+                    }
+            }
+
+            // Clear diagnostics for files that were in the previous workspace but not in the new one
+            val newSources = sources.keys.toSet()
+            val removedSources = oldSources - newSources
+
+            removedSources.forEach { uri ->
+                clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, emptyList()))
+            }
+
+            compileIfNeeded()
+        } catch (e: Exception) {
+            logger.error("Error preloading sources: ${e.message}")
+        }
+    }
+
+    private fun isInWorkspace(path: Path): Boolean {
+        return workspacePath?.let { workspace ->
+            try {
+                path.toRealPath().startsWith(workspace.toRealPath())
+            } catch (e: Exception) {
+                false
+            }
+        } ?: true // Accept all files if workspace not set
     }
 
     private fun createDiagnostic(compileException: CompileException): Diagnostic {
