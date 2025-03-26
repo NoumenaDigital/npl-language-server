@@ -48,14 +48,13 @@ class LanguageServer(
                 textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
             }
         params.workspaceFolders
-            ?.singleOrNull()
-            ?.uri
+            ?.map { it.uri }
             ?.let { preloadSources(it) }
         return completedFuture(InitializeResult(capabilities))
     }
 
-    private fun preloadSources(nplRootUri: String) {
-        compilerService.preloadSources(nplRootUri)
+    private fun preloadSources(nplRootUris: List<String>) {
+        compilerService.preloadSources(nplRootUris)
     }
 
     override fun shutdown(): CompletableFuture<Any> = completedFuture(null)

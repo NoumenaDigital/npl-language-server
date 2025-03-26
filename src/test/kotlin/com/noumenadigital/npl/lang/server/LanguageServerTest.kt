@@ -37,7 +37,7 @@ class LanguageServerTest :
                 val result = server.initialize(params).get()
 
                 result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
-                verify { compilerMock.preloadSources("file:///test/workspace") }
+                verify { compilerMock.preloadSources(listOf("file:///test/workspace")) }
             }
 
             test("exit") {

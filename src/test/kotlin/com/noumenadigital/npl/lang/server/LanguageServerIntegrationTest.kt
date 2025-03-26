@@ -204,7 +204,7 @@ class LanguageServerIntegrationTest : FunSpec() {
                         content: String,
                     ) {}
 
-                    override fun preloadSources(nplRootUri: String) {}
+                    override fun preloadSources(nplRootUris: List<String>) {}
                 }
 
             val server =
@@ -241,9 +241,9 @@ class CompilerServiceSpy(
         content: String,
     ) = delegate.updateSource(uri, content)
 
-    override fun preloadSources(nplRootUri: String) {
+    override fun preloadSources(nplRootUris: List<String>) {
         preloadSourcesCalled = true
-        preloadedUri = nplRootUri
-        delegate.preloadSources(nplRootUri)
+        preloadedUri = nplRootUris.firstOrNull()
+        delegate.preloadSources(nplRootUris)
     }
 }

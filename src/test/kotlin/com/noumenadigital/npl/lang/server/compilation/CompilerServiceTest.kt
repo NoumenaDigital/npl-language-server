@@ -221,7 +221,7 @@ class CompilerServiceTest :
                     val service = DefaultCompilerService(clientProvider)
 
                     val workspaceUri = workspaceDir.toUri().toString()
-                    service.preloadSources(workspaceUri)
+                    service.preloadSources(listOf(workspaceUri))
 
                     val fileUri = createNplFile(workspaceDir, "Valid.npl", validCodeWithError()).toUri().toString()
 
@@ -240,7 +240,7 @@ class CompilerServiceTest :
                         val clientProvider = LanguageClientProvider().apply { client = testClient }
                         val service = DefaultCompilerService(clientProvider)
 
-                        service.preloadSources(workspaceDir.toUri().toString())
+                        service.preloadSources(listOf(workspaceDir.toUri().toString()))
 
                         val outsideFileUri =
                             createNplFile(outsideDir, "Outside.npl", validCodeWithError())
@@ -263,7 +263,7 @@ class CompilerServiceTest :
                         val service = DefaultCompilerService(clientProvider)
 
                         // Initial setup with file in workspace
-                        service.preloadSources(workspaceDir.toUri().toString())
+                        service.preloadSources(listOf(workspaceDir.toUri().toString()))
                         val fileUri =
                             createNplFile(workspaceDir, "Moving.npl", validCodeWithError())
                                 .toUri()
@@ -271,7 +271,7 @@ class CompilerServiceTest :
                         service.updateSource(fileUri, validCodeWithError())
 
                         // Change workspace, making the file effectively outside
-                        service.preloadSources(outsideDir.toUri().toString())
+                        service.preloadSources(listOf(outsideDir.toUri().toString()))
 
                         // Verify empty diagnostics were published
                         Thread.sleep(200)
@@ -301,11 +301,49 @@ class CompilerServiceTest :
                         val field = DefaultCompilerService::class.java.getDeclaredField("sources")
                         field.isAccessible = true
 
-                        service.preloadSources(workspaceDir.toUri().toString())
+                        service.preloadSources(listOf(workspaceDir.toUri().toString()))
                         preloadedSources = (field.get(service) as Map<*, *>).size
 
                         // Should only load the 3 files inside workspace
                         preloadedSources shouldBe 3
+                    }
+                }
+            }
+
+            test("Files from multiple workspaces should be loaded") {
+                withTempDirectory("workspace-test-1") { workspaceDir1 ->
+                    withTempDirectory("workspace-test-2") { workspaceDir2 ->
+                        withTempDirectory("outside-dir") { outsideDir ->
+                            // Setup test files
+                            createNplFile(workspaceDir1, "Inside1.npl", simpleValidCode())
+                            createNplFile(workspaceDir2, "Inside2.npl", simpleValidCode())
+                            createNplFile(outsideDir, "Outside.npl", simpleValidCode())
+
+                            // Track preloaded sources count
+                            val service = DefaultCompilerService(LanguageClientProvider())
+                            val sourcesField = DefaultCompilerService::class.java.getDeclaredField("sources")
+                            sourcesField.isAccessible = true
+
+                            // Configure service with multiple workspaces
+                            service.preloadSources(
+                                listOf(
+                                    workspaceDir1.toUri().toString(),
+                                    workspaceDir2.toUri().toString(),
+                                ),
+                            )
+
+                            // Get loaded sources
+                            val sources = sourcesField.get(service) as Map<*, *>
+
+                            // Should load files from both workspaces but not outside
+                            sources.size shouldBe 2
+
+                            // Verify the sources contain files from both workspaces
+                            val sourceUris = sources.keys.map { it.toString() }
+                            sourceUris.any { it.contains(workspaceDir1.fileName.toString()) } shouldBe true
+                            sourceUris.any { it.contains(workspaceDir2.fileName.toString()) } shouldBe true
+                            sourceUris.any { it.contains(outsideDir.fileName.toString()) } shouldBe false
+                        }
                     }
                 }
             }

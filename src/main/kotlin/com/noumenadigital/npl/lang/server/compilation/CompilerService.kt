@@ -30,7 +30,7 @@ interface CompilerService {
         @Language("NPL") content: String,
     )
 
-    fun preloadSources(nplRootUri: String)
+    fun preloadSources(nplRootUris: List<String>)
 }
 
 class DefaultCompilerService(
@@ -39,7 +39,7 @@ class DefaultCompilerService(
     private val sources = mutableMapOf<String, Source>()
     private val modifiedSources = mutableSetOf<String>()
     private var lastCompileResult: CompileResult? = null
-    private var workspacePath: Path? = null
+    private var workspacePaths: List<Path> = emptyList()
     private val logger = LoggerFactory.getLogger(DefaultCompilerService::class.java)
 
     private fun compileIfNeeded() {
@@ -113,26 +113,28 @@ class DefaultCompilerService(
         }
     }
 
-    override fun preloadSources(nplRootUri: String) {
+    override fun preloadSources(nplRootUris: List<String>) {
         // When workspace changes, we need to clear diagnostics for files that are no longer in workspace
         val oldSources = sources.keys.toSet()
 
-        workspacePath = createPathFromUri(nplRootUri)
-        logger.info("Setting workspace: ${workspacePath?.toAbsolutePath()}")
+        workspacePaths = nplRootUris.map { createPathFromUri(it) }
+        logger.info("Setting workspaces: ${workspacePaths.map { it.toAbsolutePath() }}")
 
         sources.clear()
         modifiedSources.clear()
 
         try {
-            Files.walk(workspacePath).use { pathStream ->
-                pathStream
-                    .filter { Files.isRegularFile(it) && it.extension == NPL_FILE_EXTENSION }
-                    .filter { !it.toString().contains(TARGET_DIR_PATTERN) }
-                    .forEach { path ->
-                        val uri = path.toUri().toString()
-                        sources[uri] = Source(path, Files.readString(path))
-                        modifiedSources.add(uri)
-                    }
+            workspacePaths.forEach { workspacePath ->
+                Files.walk(workspacePath).use { pathStream ->
+                    pathStream
+                        .filter { Files.isRegularFile(it) && it.extension == NPL_FILE_EXTENSION }
+                        .filter { !it.toString().contains(TARGET_DIR_PATTERN) }
+                        .forEach { path ->
+                            val uri = path.toUri().toString()
+                            sources[uri] = Source(path, Files.readString(path))
+                            modifiedSources.add(uri)
+                        }
+                }
             }
 
             // Clear diagnostics for files that were in the previous workspace but not in the new one
@@ -149,15 +151,18 @@ class DefaultCompilerService(
         }
     }
 
-    private fun isInWorkspace(path: Path): Boolean {
-        return workspacePath?.let { workspace ->
-            try {
-                path.toRealPath().startsWith(workspace.toRealPath())
-            } catch (e: Exception) {
-                false
+    private fun isInWorkspace(path: Path): Boolean =
+        if (workspacePaths.isEmpty()) {
+            true // Accept all files if workspace not set
+        } else {
+            workspacePaths.any { workspace ->
+                try {
+                    path.toRealPath().startsWith(workspace.toRealPath())
+                } catch (e: Exception) {
+                    false
+                }
             }
-        } ?: true // Accept all files if workspace not set
-    }
+        }
 
     private fun createDiagnostic(compileException: CompileException): Diagnostic {
         val snippetLines = compileException.sourceInfo.snippet.split("\n")
