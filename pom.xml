@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.noumenadigital.platform</groupId>
-    <artifactId>npl-language-server</artifactId>
+    <artifactId>language-server</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>${project.artifactId}</name>
     <description>Language server for NPL</description>
