@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.noumenadigital.platform</groupId>
-    <artifactId>language-server</artifactId>
+    <artifactId>npl-language-server</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>${project.artifactId}</name>
     <description>Language server for NPL</description>
@@ -155,7 +155,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-jar-plugin</artifactId>
-                        <version>3.7.1</version>
+                        <version>3.4.2</version>
                         <executions>
                             <execution>
                                 <id>default-jar</id>
