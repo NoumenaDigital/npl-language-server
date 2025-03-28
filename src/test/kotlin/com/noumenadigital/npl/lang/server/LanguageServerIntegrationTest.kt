@@ -76,6 +76,61 @@ class LanguageServerIntegrationTest : FunSpec() {
                     exitHandler.statusCode shouldBe 0
                 }
             }
+
+            test("preloads NPL sources from workspace and test sources") {
+                withTempDirectory("npl-test") { workspaceDir ->
+                    withTempDirectory("npl-test-sources") { testDir ->
+                        createNplFile(workspaceDir, "Main.npl", "package main")
+                        createNplFile(testDir, "Test.npl", "package test")
+
+                        val clientProvider = LanguageClientProvider()
+                        val client = TestLanguageClient()
+                        clientProvider.client = client
+
+                        val compilerServiceSpy =
+                            CompilerServiceSpy(
+                                DefaultCompilerService(clientProvider),
+                            )
+
+                        val exitHandler = SafeSystemExitHandler()
+                        val server =
+                            createTestServer(
+                                systemExitHandler = exitHandler,
+                                clientProvider = clientProvider,
+                                compilerServiceFactory = { compilerServiceSpy },
+                            )
+
+                        (server as LanguageClientAware).connect(client)
+                        client.connect(server)
+
+                        val params =
+                            createParams(workspaceDir.toUri().toString()).apply {
+                                initializationOptions =
+                                    mapOf(
+                                        "testSources" to
+                                            mapOf(
+                                                "uri" to testDir.toUri().toString(),
+                                                "name" to "Test Sources",
+                                            ),
+                                    )
+                            }
+
+                        client.initialize(params).get(timeoutSeconds, TimeUnit.SECONDS)
+
+                        compilerServiceSpy.preloadSourcesCalled shouldBe true
+                        compilerServiceSpy.preloadedUris shouldBe
+                            listOf(
+                                workspaceDir.toUri().toString(),
+                                testDir.toUri().toString(),
+                            )
+
+                        client.shutdown().get(5, TimeUnit.SECONDS)
+                        client.exit()
+                        exitHandler.exitCalled shouldBe true
+                        exitHandler.statusCode shouldBe 0
+                    }
+                }
+            }
         }
 
         context("Document diagnostics") {
@@ -235,6 +290,7 @@ class CompilerServiceSpy(
 ) : CompilerService {
     var preloadSourcesCalled = false
     var preloadedUri: String? = null
+    var preloadedUris: List<String> = emptyList()
 
     override fun updateSource(
         uri: String,
@@ -244,6 +300,7 @@ class CompilerServiceSpy(
     override fun preloadSources(nplRootUris: List<String>) {
         preloadSourcesCalled = true
         preloadedUri = nplRootUris.firstOrNull()
+        preloadedUris = nplRootUris
         delegate.preloadSources(nplRootUris)
     }
 }

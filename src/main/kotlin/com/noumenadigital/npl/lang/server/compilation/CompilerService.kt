@@ -8,7 +8,6 @@ import com.noumenadigital.npl.lang.CompilerConfiguration
 import com.noumenadigital.npl.lang.Loader
 import com.noumenadigital.npl.lang.Source
 import com.noumenadigital.npl.lang.server.LanguageClientProvider
-import mu.KotlinLogging
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position
@@ -20,8 +19,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.extension
-
-private val logger = KotlinLogging.logger { }
 
 private const val NPL_FILE_EXTENSION = "npl"
 private const val TARGET_DIR_PATTERN = "/target/"
@@ -117,39 +114,33 @@ class DefaultCompilerService(
     override fun preloadSources(nplRootUris: List<String>) {
         // When workspace changes, we need to clear diagnostics for files that are no longer in workspace
         val oldSources = sources.keys.toSet()
-
-        workspacePaths = nplRootUris.map { createPathFromUri(it) }
-        logger.info("Setting workspaces: ${workspacePaths.map { it.toAbsolutePath() }}")
-
         sources.clear()
         modifiedSources.clear()
 
-        try {
-            workspacePaths.forEach { workspacePath ->
-                Files.walk(workspacePath).use { pathStream ->
-                    pathStream
-                        .filter { Files.isRegularFile(it) && it.extension == NPL_FILE_EXTENSION }
-                        .filter { !it.toString().contains(TARGET_DIR_PATTERN) }
-                        .forEach { path ->
-                            val uri = path.toUri().toString()
-                            sources[uri] = Source(path, Files.readString(path))
-                            modifiedSources.add(uri)
-                        }
-                }
+        workspacePaths = nplRootUris.map { createPathFromUri(it) }
+
+        workspacePaths.forEach { workspacePath ->
+            Files.walk(workspacePath).use { pathStream ->
+                pathStream
+                    .filter { Files.isRegularFile(it) && it.extension == NPL_FILE_EXTENSION }
+                    .filter { !it.toString().contains(TARGET_DIR_PATTERN) }
+                    .forEach { path ->
+                        val uri = path.toUri().toString()
+                        sources[uri] = Source(path, Files.readString(path))
+                        modifiedSources.add(uri)
+                    }
             }
-
-            // Clear diagnostics for files that were in the previous workspace but not in the new one
-            val newSources = sources.keys.toSet()
-            val removedSources = oldSources - newSources
-
-            removedSources.forEach { uri ->
-                clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, emptyList()))
-            }
-
-            compileIfNeeded()
-        } catch (e: Exception) {
-            logger.error("Error preloading sources: ${e.message}")
         }
+
+        // Clear diagnostics for files that were in the previous workspace but not in the new one
+        val newSources = sources.keys.toSet()
+        val removedSources = oldSources - newSources
+
+        removedSources.forEach { uri ->
+            clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, emptyList()))
+        }
+
+        compileIfNeeded()
     }
 
     private fun isInWorkspace(path: Path): Boolean =

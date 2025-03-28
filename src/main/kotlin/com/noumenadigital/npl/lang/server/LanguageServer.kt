@@ -2,6 +2,7 @@ package com.noumenadigital.npl.lang.server
 
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
+import mu.KotlinLogging
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
@@ -13,6 +14,7 @@ import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.ServerCapabilities
 import org.eclipse.lsp4j.SetTraceParams
 import org.eclipse.lsp4j.TextDocumentSyncKind
+import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageClientAware
@@ -22,6 +24,12 @@ import org.eclipse.lsp4j.services.WorkspaceService
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 import kotlin.system.exitProcess
+
+private val logger = KotlinLogging.logger { }
+
+data class NplInitializationOptions(
+    val testSources: WorkspaceFolder?,
+)
 
 interface SystemExitHandler {
     fun exit(status: Int)
@@ -47,9 +55,31 @@ class LanguageServer(
             ServerCapabilities().apply {
                 textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
             }
+
+        val nplRootUris = mutableListOf<String>()
+
         params.workspaceFolders
-            ?.map { it.uri }
-            ?.let { preloadSources(it) }
+            ?.filterNotNull()
+            ?.mapNotNull { it.uri }
+            ?.let { nplRootUris.addAll(it) }
+
+        @Suppress("UNCHECKED_CAST")
+        val initOptions =
+            params.initializationOptions?.let { options ->
+                val map = options as? Map<String, Any> ?: return@let null
+                val testSources = map["testSources"] as? Map<String, String> ?: return@let null
+                val uri = testSources["uri"] ?: return@let null
+                val name = testSources["name"] ?: return@let null
+                NplInitializationOptions(WorkspaceFolder(uri, name))
+            }
+
+        initOptions?.testSources?.uri?.let { nplRootUris.add(it) }
+
+        if (nplRootUris.isNotEmpty()) {
+            logger.info("Preloading sources for workspace folders: $nplRootUris")
+            preloadSources(nplRootUris)
+        }
+
         return completedFuture(InitializeResult(capabilities))
     }
 

@@ -347,6 +347,40 @@ class CompilerServiceTest :
                     }
                 }
             }
+
+            test("Test sources from initialization options should be loaded") {
+                withTempDirectory("workspace-test") { workspaceDir ->
+                    withTempDirectory("test-sources") { testDir ->
+                        // Setup test files
+                        createNplFile(workspaceDir, "Main.npl", simpleValidCode())
+                        createNplFile(testDir, "Test.npl", validCodeWithError())
+
+                        // Track preloaded sources count
+                        val service = DefaultCompilerService(LanguageClientProvider())
+                        val sourcesField = DefaultCompilerService::class.java.getDeclaredField("sources")
+                        sourcesField.isAccessible = true
+
+                        // Configure service with workspace and test sources
+                        service.preloadSources(
+                            listOf(
+                                workspaceDir.toUri().toString(),
+                                testDir.toUri().toString(),
+                            ),
+                        )
+
+                        // Get loaded sources
+                        val sources = sourcesField.get(service) as Map<*, *>
+
+                        // Should load files from both directories
+                        sources.size shouldBe 2
+
+                        // Verify the sources contain files from both directories
+                        val sourceUris = sources.keys.map { it.toString() }
+                        sourceUris.any { it.contains(workspaceDir.fileName.toString()) } shouldBe true
+                        sourceUris.any { it.contains(testDir.fileName.toString()) } shouldBe true
+                    }
+                }
+            }
         }
     })
 

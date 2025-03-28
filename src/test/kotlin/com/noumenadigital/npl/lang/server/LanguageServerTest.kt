@@ -40,6 +40,41 @@ class LanguageServerTest :
                 verify { compilerMock.preloadSources(listOf("file:///test/workspace")) }
             }
 
+            test("initialization with test sources") {
+                val compilerMock = mockk<CompilerService>(relaxed = true)
+                val server =
+                    createTestServer(
+                        compilerServiceFactory = { compilerMock },
+                    )
+
+                val workspaceFolder = WorkspaceFolder("file:///test/workspace", "Test")
+                val testSourcesFolder = WorkspaceFolder("file:///test/sources", "Test Sources")
+                val params =
+                    InitializeParams().apply {
+                        workspaceFolders = listOf(workspaceFolder)
+                        initializationOptions =
+                            mapOf(
+                                "testSources" to
+                                    mapOf(
+                                        "uri" to testSourcesFolder.uri,
+                                        "name" to testSourcesFolder.name,
+                                    ),
+                            )
+                    }
+
+                val result = server.initialize(params).get()
+
+                result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
+                verify {
+                    compilerMock.preloadSources(
+                        listOf(
+                            workspaceFolder.uri,
+                            testSourcesFolder.uri,
+                        ),
+                    )
+                }
+            }
+
             test("exit") {
                 val systemExitHandler = SafeSystemExitHandler()
                 val server = createTestServer(systemExitHandler = systemExitHandler)
