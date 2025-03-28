@@ -48,30 +48,18 @@ class LanguageServerTest :
                     )
 
                 val workspaceFolder = WorkspaceFolder("file:///test/workspace", "Test")
-                val testSourcesFolder = WorkspaceFolder("file:///test/sources", "Test Sources")
+                val testSourcesUri = "file:///test/sources"
                 val params =
                     InitializeParams().apply {
                         workspaceFolders = listOf(workspaceFolder)
-                        initializationOptions =
-                            mapOf(
-                                "testSources" to
-                                    mapOf(
-                                        "uri" to testSourcesFolder.uri,
-                                        "name" to testSourcesFolder.name,
-                                    ),
-                            )
+                        initializationOptions = mapOf("testSourcesUri" to testSourcesUri)
                     }
 
                 val result = server.initialize(params).get()
 
                 result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
                 verify {
-                    compilerMock.preloadSources(
-                        listOf(
-                            workspaceFolder.uri,
-                            testSourcesFolder.uri,
-                        ),
-                    )
+                    compilerMock.preloadSources(listOf(workspaceFolder.uri))
                 }
             }
 

@@ -107,22 +107,14 @@ class LanguageServerIntegrationTest : FunSpec() {
                             createParams(workspaceDir.toUri().toString()).apply {
                                 initializationOptions =
                                     mapOf(
-                                        "testSources" to
-                                            mapOf(
-                                                "uri" to testDir.toUri().toString(),
-                                                "name" to "Test Sources",
-                                            ),
+                                        "testSourcesUri" to testDir.toUri().toString(),
                                     )
                             }
 
                         client.initialize(params).get(timeoutSeconds, TimeUnit.SECONDS)
 
                         compilerServiceSpy.preloadSourcesCalled shouldBe true
-                        compilerServiceSpy.preloadedUris shouldBe
-                            listOf(
-                                workspaceDir.toUri().toString(),
-                                testDir.toUri().toString(),
-                            )
+                        compilerServiceSpy.preloadedUris shouldBe listOf(workspaceDir.toUri().toString())
 
                         client.shutdown().get(5, TimeUnit.SECONDS)
                         client.exit()
