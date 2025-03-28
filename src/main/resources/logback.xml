@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- Configure all loggers to use the stderr appender -->
-    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- Redirect output to stderr instead of stdout -->
-        <target>System.err</target>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
