@@ -1,10 +1,9 @@
 package com.noumenadigital.npl.lang.server
 
 import com.google.gson.JsonObject
-import mu.KotlinLogging
+import com.noumenadigital.npl.lang.server.logging.LSPLogger
 import org.eclipse.lsp4j.InitializeParams
-
-private val logger = KotlinLogging.logger {}
+import org.eclipse.lsp4j.services.LanguageClient
 
 /**
  * Utility to extract workspace folder URIs from LSP initialization parameters.
@@ -15,24 +14,42 @@ object WorkspaceFolderExtractor {
      * First attempts to get URIs from initializationOptions.effectiveWorkspaceFolders,
      * then falls back to standard workspaceFolders if needed.
      */
-    fun extractWorkspaceFolderUris(params: InitializeParams): List<String> {
-        val effectiveUris = extractUrisFromEffectiveWorkspaceFolders(params.initializationOptions)
+    fun extractWorkspaceFolderUris(
+        params: InitializeParams,
+        client: LanguageClient? = null,
+    ): List<String> {
+        val logger = LSPLogger("com.noumenadigital.npl.lang.server.WorkspaceFolderExtractor") { client }
+
+        val effectiveUris = extractUrisFromEffectiveWorkspaceFolders(params.initializationOptions, logger)
         if (effectiveUris.isNotEmpty()) {
+            logger.info("Using ${effectiveUris.size} URIs from effectiveWorkspaceFolders")
             return effectiveUris
         }
 
         logger.info("Using standard workspaceFolders")
-        return params.workspaceFolders
-            ?.filterNotNull()
-            ?.mapNotNull { it.uri }
-            ?: emptyList()
+        val standardUris =
+            params.workspaceFolders
+                ?.filterNotNull()
+                ?.mapNotNull { it.uri }
+                ?: emptyList()
+
+        if (standardUris.isEmpty()) {
+            logger.warn("No workspace folders found in either effectiveWorkspaceFolders or standard workspaceFolders")
+        } else {
+            logger.info("Found ${standardUris.size} standard workspace folders")
+        }
+
+        return standardUris
     }
 
     /**
      * Extracts URIs from the effectiveWorkspaceFolders field in initializationOptions.
      * Returns an empty list if the field is missing or malformed.
      */
-    private fun extractUrisFromEffectiveWorkspaceFolders(options: Any?): List<String> {
+    private fun extractUrisFromEffectiveWorkspaceFolders(
+        options: Any?,
+        logger: LSPLogger,
+    ): List<String> {
         if (options !is JsonObject || !options.has("effectiveWorkspaceFolders")) {
             return emptyList()
         }
@@ -55,10 +72,6 @@ object WorkspaceFolderExtractor {
                     logger.warn("Failed to extract URI from workspace folder: ${e.message}")
                 }
             }
-        }
-
-        if (uris.isNotEmpty()) {
-            logger.info("Using URIs from effectiveWorkspaceFolders")
         }
 
         return uris

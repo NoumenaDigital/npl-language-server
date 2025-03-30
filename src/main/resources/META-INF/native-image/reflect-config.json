@@ -491,6 +491,9 @@
   "name":"org.apache.logging.slf4j.SLF4JProvider"
 },
 {
+  "name":"org.codehaus.janino.ScriptEvaluator"
+},
+{
   "name":"org.eclipse.core.runtime.FileLocator"
 },
 {
@@ -931,6 +934,15 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.eclipse.lsp4j.MessageParams",
+  "allDeclaredFields":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.eclipse.lsp4j.MessageType",
+  "fields":[{"name":"value"}]
+},
+{
   "name":"org.eclipse.lsp4j.MonikerCapabilities",
   "allDeclaredFields":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
@@ -1302,6 +1314,11 @@
 },
 {
   "name":"org.eclipse.lsp4j.jsonrpc.json.adapters.JsonElementTypeAdapter$Factory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.eclipse.lsp4j.jsonrpc.messages.ResponseError",
+  "allDeclaredFields":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {

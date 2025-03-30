@@ -2,7 +2,8 @@ package com.noumenadigital.npl.lang.server
 
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
-import mu.KotlinLogging
+import com.noumenadigital.npl.lang.server.logging.LSPLogger
+import com.noumenadigital.npl.lang.server.logging.TraceManager
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
@@ -24,8 +25,6 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 import kotlin.system.exitProcess
 
-private val logger = KotlinLogging.logger { }
-
 interface SystemExitHandler {
     fun exit(status: Int)
 }
@@ -40,6 +39,7 @@ class LanguageServer(
     private val systemExitHandler: SystemExitHandler = DefaultSystemExitHandler(),
 ) : LanguageServer,
     LanguageClientAware {
+    private val logger = LSPLogger.forClass<LanguageServer> { clientProvider.client }
     private val compilerService by lazy { compilerServiceFactory(clientProvider) }
 
     private val textDocumentService = TextDocumentHandler()
@@ -51,7 +51,7 @@ class LanguageServer(
                 textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
             }
 
-        val nplRootUris = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params)
+        val nplRootUris = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params, clientProvider.client)
 
         if (nplRootUris.isNotEmpty()) {
             logger.info("Preloading sources for workspace folders: $nplRootUris")
@@ -70,11 +70,13 @@ class LanguageServer(
     override fun shutdown(): CompletableFuture<Any> = completedFuture(null)
 
     override fun exit() {
+        logger.info("Language server exiting")
         systemExitHandler.exit(0)
     }
 
     override fun setTrace(params: SetTraceParams) {
-        // no-op for now (we get an annoying exception if we don't implement this)
+        logger.info("Setting trace value to: ${params.value}")
+        TraceManager.setTraceValue(params.value)
     }
 
     override fun getTextDocumentService(): TextDocumentService = textDocumentService

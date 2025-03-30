@@ -3,6 +3,7 @@ package com.noumenadigital.npl.lang.server
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
+import com.noumenadigital.npl.lang.server.logging.TraceManager
 import com.noumenadigital.npl.lang.server.util.LanguageServerFixtures.createTestServer
 import com.noumenadigital.npl.lang.server.util.SafeSystemExitHandler
 import io.kotest.core.spec.style.FunSpec
@@ -12,9 +13,11 @@ import io.mockk.verify
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.InitializeParams
+import org.eclipse.lsp4j.SetTraceParams
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.TextDocumentSyncKind
+import org.eclipse.lsp4j.TraceValue
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.services.LanguageClient
@@ -181,6 +184,29 @@ class LanguageServerTest :
 
                 systemExitHandler.exitCalled shouldBe true
                 systemExitHandler.statusCode shouldBe 0
+            }
+
+            test("setTrace updates trace value") {
+                val server = createTestServer()
+
+                // This should be the default value
+                TraceManager.isTracingEnabled(TraceValue.Messages) shouldBe false
+
+                // Set to Messages
+                val params = SetTraceParams(TraceValue.Messages)
+                server.setTrace(params)
+
+                // Now Messages should be enabled
+                TraceManager.isTracingEnabled(TraceValue.Messages) shouldBe true
+                TraceManager.isTracingEnabled(TraceValue.Verbose) shouldBe false
+
+                // Set to Verbose
+                val verboseParams = SetTraceParams(TraceValue.Verbose)
+                server.setTrace(verboseParams)
+
+                // Now both should be enabled
+                TraceManager.isTracingEnabled(TraceValue.Messages) shouldBe true
+                TraceManager.isTracingEnabled(TraceValue.Verbose) shouldBe true
             }
         }
 
