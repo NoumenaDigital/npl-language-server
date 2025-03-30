@@ -1,6 +1,5 @@
 package com.noumenadigital.npl.lang.server
 
-import com.google.gson.JsonObject
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
 import mu.KotlinLogging
@@ -52,21 +51,13 @@ class LanguageServer(
                 textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
             }
 
-        val nplRootUris = mutableListOf<String>()
-
-        params.workspaceFolders
-            ?.filterNotNull()
-            ?.mapNotNull { it.uri }
-            ?.let { nplRootUris.addAll(it) }
-
-        val testSourcesUri = (params.initializationOptions as? JsonObject)?.get("testSourcesUri")?.asString
-        if (testSourcesUri != null) {
-            nplRootUris.add(testSourcesUri)
-        }
+        val nplRootUris = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params)
 
         if (nplRootUris.isNotEmpty()) {
             logger.info("Preloading sources for workspace folders: $nplRootUris")
             preloadSources(nplRootUris)
+        } else {
+            logger.warn("No workspace folders found to preload.")
         }
 
         return completedFuture(InitializeResult(capabilities))

@@ -1,5 +1,7 @@
 package com.noumenadigital.npl.lang.server
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
 import com.noumenadigital.npl.lang.server.util.DiagnosticTestUtils
@@ -120,6 +122,155 @@ class LanguageServerIntegrationTest : FunSpec() {
                         client.exit()
                         exitHandler.exitCalled shouldBe true
                         exitHandler.statusCode shouldBe 0
+                    }
+                }
+            }
+
+            test("preloads NPL sources from effectiveWorkspaceFolders") {
+                withTempDirectory("npl-test-1") { workspace1Dir ->
+                    withTempDirectory("npl-test-2") { workspace2Dir ->
+                        createNplFile(workspace1Dir, "Main1.npl", "package main1")
+                        createNplFile(workspace2Dir, "Main2.npl", "package main2")
+
+                        val clientProvider = LanguageClientProvider()
+                        val client = TestLanguageClient()
+                        clientProvider.client = client
+
+                        val compilerServiceSpy =
+                            CompilerServiceSpy(
+                                DefaultCompilerService(clientProvider),
+                            )
+
+                        val exitHandler = SafeSystemExitHandler()
+                        val server =
+                            createTestServer(
+                                systemExitHandler = exitHandler,
+                                clientProvider = clientProvider,
+                                compilerServiceFactory = { compilerServiceSpy },
+                            )
+
+                        (server as LanguageClientAware).connect(client)
+                        client.connect(server)
+
+                        val standardWorkspacePath = "file:///ignored/standard/path"
+
+                        val effectiveFolder1 =
+                            JsonObject().apply {
+                                addProperty("uri", workspace1Dir.toUri().toString())
+                                addProperty("name", "Workspace1")
+                            }
+                        val effectiveFolder2 =
+                            JsonObject().apply {
+                                addProperty("uri", workspace2Dir.toUri().toString())
+                                addProperty("name", "Workspace2")
+                            }
+                        val effectiveFolders =
+                            JsonArray().apply {
+                                add(effectiveFolder1)
+                                add(effectiveFolder2)
+                            }
+                        val options =
+                            JsonObject().apply {
+                                add("effectiveWorkspaceFolders", effectiveFolders)
+                            }
+
+                        val params =
+                            createParams(standardWorkspacePath).apply {
+                                initializationOptions = options
+                            }
+
+                        client.initialize(params).get(timeoutSeconds, TimeUnit.SECONDS)
+
+                        compilerServiceSpy.preloadSourcesCalled shouldBe true
+
+                        compilerServiceSpy.preloadedUris.size shouldBe 2
+                        compilerServiceSpy.preloadedUris shouldBe
+                            listOf(
+                                workspace1Dir.toUri().toString(),
+                                workspace2Dir.toUri().toString(),
+                            )
+
+                        client.shutdown().get(5, TimeUnit.SECONDS)
+                        client.exit()
+                        exitHandler.exitCalled shouldBe true
+                        exitHandler.statusCode shouldBe 0
+                    }
+                }
+            }
+
+            test("preloads NPL sources from effectiveWorkspaceFolders and testSourcesUri") {
+                withTempDirectory("npl-test-1") { workspace1Dir ->
+                    withTempDirectory("npl-test-2") { workspace2Dir ->
+                        withTempDirectory("npl-test-sources") { testDir ->
+                            createNplFile(workspace1Dir, "Main1.npl", "package main1")
+                            createNplFile(workspace2Dir, "Main2.npl", "package main2")
+                            createNplFile(testDir, "Test.npl", "package test")
+
+                            val clientProvider = LanguageClientProvider()
+                            val client = TestLanguageClient()
+                            clientProvider.client = client
+
+                            val compilerServiceSpy =
+                                CompilerServiceSpy(
+                                    DefaultCompilerService(clientProvider),
+                                )
+
+                            val exitHandler = SafeSystemExitHandler()
+                            val server =
+                                createTestServer(
+                                    systemExitHandler = exitHandler,
+                                    clientProvider = clientProvider,
+                                    compilerServiceFactory = { compilerServiceSpy },
+                                )
+
+                            (server as LanguageClientAware).connect(client)
+                            client.connect(server)
+
+                            val standardWorkspacePath = "file:///ignored/standard/path"
+
+                            val effectiveFolder1 =
+                                JsonObject().apply {
+                                    addProperty("uri", workspace1Dir.toUri().toString())
+                                    addProperty("name", "Workspace1")
+                                }
+                            val effectiveFolder2 =
+                                JsonObject().apply {
+                                    addProperty("uri", workspace2Dir.toUri().toString())
+                                    addProperty("name", "Workspace2")
+                                }
+                            val effectiveFolders =
+                                JsonArray().apply {
+                                    add(effectiveFolder1)
+                                    add(effectiveFolder2)
+                                }
+
+                            val options =
+                                JsonObject().apply {
+                                    add("effectiveWorkspaceFolders", effectiveFolders)
+                                    addProperty("testSourcesUri", testDir.toUri().toString())
+                                }
+
+                            val params =
+                                createParams(standardWorkspacePath).apply {
+                                    initializationOptions = options
+                                }
+
+                            client.initialize(params).get(timeoutSeconds, TimeUnit.SECONDS)
+
+                            compilerServiceSpy.preloadSourcesCalled shouldBe true
+
+                            compilerServiceSpy.preloadedUris.size shouldBe 2
+                            compilerServiceSpy.preloadedUris shouldBe
+                                listOf(
+                                    workspace1Dir.toUri().toString(),
+                                    workspace2Dir.toUri().toString(),
+                                )
+
+                            client.shutdown().get(5, TimeUnit.SECONDS)
+                            client.exit()
+                            exitHandler.exitCalled shouldBe true
+                            exitHandler.statusCode shouldBe 0
+                        }
                     }
                 }
             }
