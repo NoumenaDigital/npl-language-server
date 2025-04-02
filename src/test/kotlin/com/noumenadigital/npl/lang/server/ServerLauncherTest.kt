@@ -1,8 +1,15 @@
 package com.noumenadigital.npl.lang.server
 
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.ConsoleAppender
 import com.noumenadigital.npl.lang.server.util.TestServerLauncher
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import org.slf4j.LoggerFactory
 
 class ServerLauncherTest :
     FunSpec({
@@ -80,6 +87,7 @@ class ServerLauncherTest :
                 launchServer(config, testLauncher)
 
                 testLauncher.tcpServerLaunched shouldBe true
+                testLauncher.outputStream shouldNotBe null
             }
 
             test("stdio uses System streams") {
@@ -92,6 +100,42 @@ class ServerLauncherTest :
                 testLauncher.stdioServerLaunched shouldBe true
                 testLauncher.inputStream shouldBe System.`in`
                 testLauncher.outputStream shouldBe System.out
+            }
+        }
+
+        context("Logging configuration") {
+            test("redirectLogbackToStderr configures stderr appender") {
+                val originalContext = LoggerFactory.getILoggerFactory() as? LoggerContext
+                val originalAppenders =
+                    originalContext
+                        ?.getLogger(Logger.ROOT_LOGGER_NAME)
+                        ?.iteratorForAppenders()
+                        ?.asSequence()
+                        ?.toList()
+
+                try {
+                    val launcher = DefaultServerLauncher()
+
+                    launcher.redirectLogbackToStderr()
+
+                    val loggerContext = LoggerFactory.getILoggerFactory().shouldBeInstanceOf<LoggerContext>()
+                    val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
+
+                    val appenders = rootLogger.iteratorForAppenders().asSequence().toList()
+                    appenders.size shouldBe 1
+
+                    val appender = appenders.first().shouldBeInstanceOf<ConsoleAppender<ILoggingEvent>>()
+                    appender.name shouldBe "STDERR"
+                    appender.target shouldBe "System.err"
+                    appender.isStarted shouldBe true
+                } finally {
+                    // Restore original configuration
+                    originalContext?.let { ctx ->
+                        val rootLogger = ctx.getLogger(Logger.ROOT_LOGGER_NAME)
+                        rootLogger.detachAndStopAllAppenders()
+                        originalAppenders?.forEach { rootLogger.addAppender(it) }
+                    }
+                }
             }
         }
     })

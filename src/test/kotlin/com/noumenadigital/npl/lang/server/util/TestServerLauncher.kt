@@ -16,19 +16,29 @@ class TestServerLauncher : ServerLauncher {
     override fun launchTcpServer(port: Int) {
         tcpServerLaunched = true
         tcpPort = port
-        setupServer()
+        // TCP mode uses its own streams (simulated here with mocks)
+        val server = createLanguageServer()
+        val input = createMockInputStream()
+        val output = createMockOutputStream()
+        startServer(server, input, output)
     }
 
     override fun launchStdioServer() {
         stdioServerLaunched = true
-        setupServer()
-    }
-
-    private fun setupServer() {
+        // Stdio mode selects streams based on useSystemStreams
         val server = createLanguageServer()
         val input = if (useSystemStreams) System.`in` else createMockInputStream()
         val output = if (useSystemStreams) System.out else createMockOutputStream()
         startServer(server, input, output)
+    }
+
+    override fun startServer(
+        languageServer: LanguageServer,
+        input: InputStream,
+        output: OutputStream,
+    ) {
+        inputStream = input
+        outputStream = output
     }
 
     private fun createMockInputStream() =
@@ -40,13 +50,4 @@ class TestServerLauncher : ServerLauncher {
         object : OutputStream() {
             override fun write(b: Int) {}
         }
-
-    override fun startServer(
-        languageServer: LanguageServer,
-        input: InputStream,
-        output: OutputStream,
-    ) {
-        inputStream = input
-        outputStream = output
-    }
 }

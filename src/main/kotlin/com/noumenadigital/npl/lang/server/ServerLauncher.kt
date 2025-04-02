@@ -99,7 +99,7 @@ class DefaultServerLauncher : ServerLauncher {
         }
     }
 
-    private fun redirectLogbackToStderr() {
+    internal fun redirectLogbackToStderr() {
         val loggerContext = LoggerFactory.getILoggerFactory() as? LoggerContext ?: return
 
         val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
