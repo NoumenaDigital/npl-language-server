@@ -34,13 +34,13 @@ fun launchServer(
     when (config.mode) {
         ServerMode.TCP -> {
             val port = config.tcpPort ?: DEFAULT_TCP_PORT
-            logger.info("Starting language server in TCP mode on port $port")
             launcher.launchTcpServer(port)
+            logger.info("Started language server in TCP mode on port $port")
         }
 
         ServerMode.STDIO -> {
-            logger.info("Starting language server in stdio mode")
             launcher.launchStdioServer()
+            logger.info("Started language server in stdio mode")
         }
     }
 }
