@@ -2,6 +2,7 @@ package com.noumenadigital.npl.lang.server
 
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
+import mu.KotlinLogging
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
@@ -31,6 +32,8 @@ class DefaultSystemExitHandler : SystemExitHandler {
     override fun exit(status: Int) = exitProcess(status)
 }
 
+private val logger = KotlinLogging.logger { }
+
 class LanguageServer(
     private val clientProvider: LanguageClientProvider = LanguageClientProvider(),
     private val compilerServiceFactory: (LanguageClientProvider) -> CompilerService = ::DefaultCompilerService,
@@ -47,15 +50,21 @@ class LanguageServer(
             ServerCapabilities().apply {
                 textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
             }
-        params.workspaceFolders
-            ?.singleOrNull()
-            ?.uri
-            ?.let { preloadSources(it) }
+
+        val nplRootUris = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params)
+
+        if (nplRootUris.isNotEmpty()) {
+            logger.info("Preloading sources for workspace folders: $nplRootUris")
+            preloadSources(nplRootUris)
+        } else {
+            logger.warn("No workspace folders found to preload.")
+        }
+
         return completedFuture(InitializeResult(capabilities))
     }
 
-    private fun preloadSources(nplRootUri: String) {
-        compilerService.preloadSources(nplRootUri)
+    private fun preloadSources(nplRootUris: List<String>) {
+        compilerService.preloadSources(nplRootUris)
     }
 
     override fun shutdown(): CompletableFuture<Any> = completedFuture(null)
