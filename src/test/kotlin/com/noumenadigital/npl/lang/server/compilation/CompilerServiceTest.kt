@@ -3,6 +3,7 @@ package com.noumenadigital.npl.lang.server.compilation
 import com.noumenadigital.npl.lang.server.LanguageClientProvider
 import com.noumenadigital.npl.lang.server.util.DiagnosticTestUtils
 import com.noumenadigital.npl.lang.server.util.DiagnosticTestUtils.ExpectedDiagnostic
+import com.noumenadigital.npl.lang.server.util.NplFileFixtures.withNplTestFile
 import com.noumenadigital.npl.lang.server.util.TestLanguageClient
 import com.noumenadigital.npl.lang.server.util.UriFixtures.withNplTestFile
 import io.kotest.core.spec.style.FunSpec
