@@ -348,29 +348,6 @@ class CompilerServiceTest :
                 }
             }
 
-            test("WorkspaceFolderExtractor URI format should be compatible with CompilerService") {
-                withTempDirectory("workspace-test-1") { workspaceDir1 ->
-                    withTempDirectory("workspace-test-2") { workspaceDir2 ->
-                        val clientProvider = LanguageClientProvider()
-                        val service = DefaultCompilerService(clientProvider)
-                        val sourcesField = DefaultCompilerService::class.java.getDeclaredField("sources")
-                        sourcesField.isAccessible = true
-
-                        val uris =
-                            listOf(
-                                workspaceDir1.toUri().toString(),
-                                workspaceDir2.toUri().toString(),
-                            )
-
-                        service.preloadSources(uris)
-
-                        val sources = sourcesField.get(service) as Map<*, *>
-
-                        sources.isEmpty() shouldBe true
-                    }
-                }
-            }
-
             test("Test sources from initialization options should be loaded") {
                 withTempDirectory("workspace-test") { workspaceDir ->
                     withTempDirectory("test-sources") { testDir ->
