@@ -107,6 +107,8 @@ class DefaultCompilerService(
         } else if (sources.containsKey(uri)) {
             // Clear diagnostics and remove file if outside workspace
             sources.remove(uri)
+            modifiedSources.remove(uri)
+
             clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, emptyList()))
         }
     }
