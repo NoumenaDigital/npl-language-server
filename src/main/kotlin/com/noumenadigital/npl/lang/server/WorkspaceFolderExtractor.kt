@@ -2,24 +2,22 @@ package com.noumenadigital.npl.lang.server
 
 import com.google.gson.JsonObject
 import mu.KotlinLogging
-import org.eclipse.lsp4j.InitializeParams
 
 private val logger = KotlinLogging.logger { }
 
 object WorkspaceFolderExtractor {
-    fun extractWorkspaceFolderUris(params: InitializeParams): List<String> {
-        val effectiveUris = extractUrisFromEffectiveWorkspaceFolders(params.initializationOptions)
+    fun extractWorkspaceFolderUris(
+        initializationOptions: Any?,
+        standardWorkspaceFolderUris: List<String>?,
+    ): List<String> {
+        val effectiveUris = extractUrisFromEffectiveWorkspaceFolders(initializationOptions)
         if (effectiveUris.isNotEmpty()) {
             logger.info("Using ${effectiveUris.size} URIs from effectiveWorkspaceFolders")
             return effectiveUris
         }
 
         logger.info("Using standard workspaceFolders")
-        val standardUris =
-            params.workspaceFolders
-                ?.filterNotNull()
-                ?.mapNotNull { it.uri }
-                ?: emptyList()
+        val standardUris = standardWorkspaceFolderUris ?: emptyList()
 
         if (standardUris.isEmpty()) {
             logger.warn("No workspace folders found in either effectiveWorkspaceFolders or standard workspaceFolders")

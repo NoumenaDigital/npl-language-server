@@ -6,8 +6,6 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import org.eclipse.lsp4j.InitializeParams
-import org.eclipse.lsp4j.WorkspaceFolder
 
 class WorkspaceFolderExtractorTest :
     FunSpec({
@@ -29,13 +27,8 @@ class WorkspaceFolderExtractorTest :
                         add("effectiveWorkspaceFolders", effectiveWorkspaceFolders)
                     }
 
-                val params =
-                    InitializeParams().apply {
-                        initializationOptions = options
-                    }
-
                 // Execute
-                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params)
+                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(options, null)
 
                 // Verify
                 result.shouldContainExactlyInAnyOrder(uri1, uri2)
@@ -45,18 +38,10 @@ class WorkspaceFolderExtractorTest :
                 // Setup
                 val uri1 = "file:///test/uri1"
                 val uri2 = "file:///test/uri2"
-
-                val params =
-                    InitializeParams().apply {
-                        workspaceFolders =
-                            listOf(
-                                WorkspaceFolder(uri1, "folder1"),
-                                WorkspaceFolder(uri2, "folder2"),
-                            )
-                    }
+                val standardFolders = listOf(uri1, uri2)
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params)
+                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(null, standardFolders)
 
                 // Verify
                 result.shouldContainExactlyInAnyOrder(uri1, uri2)
@@ -65,23 +50,15 @@ class WorkspaceFolderExtractorTest :
             test("should fall back to standard workspaceFolders when effectiveWorkspaceFolders is empty") {
                 // Setup
                 val uri1 = "file:///test/uri1"
+                val standardFolders = listOf(uri1)
 
                 val options =
                     JsonObject().apply {
                         add("effectiveWorkspaceFolders", JsonArray())
                     }
 
-                val params =
-                    InitializeParams().apply {
-                        initializationOptions = options
-                        workspaceFolders =
-                            listOf(
-                                WorkspaceFolder(uri1, "folder1"),
-                            )
-                    }
-
                 // Execute
-                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params)
+                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(options, standardFolders)
 
                 // Verify
                 result.shouldContainExactly(uri1)
@@ -102,24 +79,16 @@ class WorkspaceFolderExtractorTest :
                         add("effectiveWorkspaceFolders", effectiveWorkspaceFolders)
                     }
 
-                val params =
-                    InitializeParams().apply {
-                        initializationOptions = options
-                    }
-
                 // Execute
-                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params)
+                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(options, null)
 
                 // Verify
                 result.shouldContainExactly(uri1)
             }
 
             test("should return empty list when both effectiveWorkspaceFolders and workspaceFolders are missing") {
-                // Setup
-                val params = InitializeParams()
-
                 // Execute
-                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params)
+                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(null, null)
 
                 // Verify
                 result.shouldBeEmpty()
@@ -128,18 +97,10 @@ class WorkspaceFolderExtractorTest :
             test("should handle non-JsonObject initializationOptions") {
                 // Setup
                 val uri1 = "file:///test/uri1"
-
-                val params =
-                    InitializeParams().apply {
-                        initializationOptions = "Not a JsonObject"
-                        workspaceFolders =
-                            listOf(
-                                WorkspaceFolder(uri1, "folder1"),
-                            )
-                    }
+                val standardFolders = listOf(uri1)
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params)
+                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris("Not a JsonObject", standardFolders)
 
                 // Verify
                 result.shouldContainExactly(uri1)

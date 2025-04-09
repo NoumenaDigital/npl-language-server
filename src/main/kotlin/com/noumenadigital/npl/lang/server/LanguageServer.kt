@@ -51,7 +51,16 @@ class LanguageServer(
                 textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
             }
 
-        val nplRootUris = WorkspaceFolderExtractor.extractWorkspaceFolderUris(params)
+        val standardWorkspaceFolderUris =
+            params.workspaceFolders
+                ?.filterNotNull()
+                ?.mapNotNull { it.uri }
+
+        val nplRootUris =
+            WorkspaceFolderExtractor.extractWorkspaceFolderUris(
+                params.initializationOptions,
+                standardWorkspaceFolderUris,
+            )
 
         if (nplRootUris.isNotEmpty()) {
             logger.info("Preloading sources for workspace folders: $nplRootUris")
