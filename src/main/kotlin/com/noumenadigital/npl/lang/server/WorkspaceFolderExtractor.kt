@@ -37,7 +37,7 @@ object WorkspaceFolderExtractor {
             try {
                 options.getAsJsonArray("effectiveWorkspaceFolders")
             } catch (e: Exception) {
-                logger.warn("Error parsing effectiveWorkspaceFolders: ${e.message}")
+                logger.warn(e) { "Error parsing effectiveWorkspaceFolders" }
                 return emptyList()
             }
 
@@ -48,7 +48,7 @@ object WorkspaceFolderExtractor {
                     val uri = element.get("uri").asString
                     uris.add(uri)
                 } catch (e: Exception) {
-                    logger.warn("Failed to extract URI from workspace folder: ${e.message}")
+                    logger.warn(e) { "Failed to extract URI from workspace folder" }
                 }
             }
         }
