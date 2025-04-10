@@ -11,8 +11,8 @@ data class InitializationOptions(
 )
 
 data class EffectiveWorkspaceFolder(
-    val uri: String,
-    val name: String,
+    val uri: String?,
+    val name: String?,
 )
 
 object WorkspaceFolderExtractor {
@@ -41,15 +41,15 @@ object WorkspaceFolderExtractor {
     }
 
     private fun extractUrisFromEffectiveWorkspaceFolders(options: Any?): List<String> {
-        if (options == null) {
+        if (options == null || options !is JsonObject) {
             return emptyList()
         }
 
         try {
-            val initOptions = gson.fromJson(options as JsonObject, InitializationOptions::class.java)
+            val initOptions = gson.fromJson(options, InitializationOptions::class.java)
 
             return initOptions.effectiveWorkspaceFolders
-                ?.mapNotNull { it.uri.takeIf(String::isNotBlank) }
+                ?.mapNotNull { wsf -> wsf.uri.takeIf { !it.isNullOrBlank() } }
                 ?: emptyList()
         } catch (e: Exception) {
             logger.warn(e) { "Error parsing effectiveWorkspaceFolders" }
