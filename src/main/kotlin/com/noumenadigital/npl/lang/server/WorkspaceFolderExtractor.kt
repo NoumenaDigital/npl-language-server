@@ -1,11 +1,23 @@
 package com.noumenadigital.npl.lang.server
 
+import com.google.gson.Gson
 import com.google.gson.JsonObject
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger { }
 
+data class InitializationOptions(
+    val effectiveWorkspaceFolders: List<EffectiveWorkspaceFolder>?,
+)
+
+data class EffectiveWorkspaceFolder(
+    val uri: String,
+    val name: String,
+)
+
 object WorkspaceFolderExtractor {
+    private val gson = Gson()
+
     fun extractWorkspaceFolderUris(
         initializationOptions: Any?,
         standardWorkspaceFolderUris: List<String>?,
@@ -29,30 +41,19 @@ object WorkspaceFolderExtractor {
     }
 
     private fun extractUrisFromEffectiveWorkspaceFolders(options: Any?): List<String> {
-        if (options !is JsonObject || !options.has("effectiveWorkspaceFolders")) {
+        if (options == null) {
             return emptyList()
         }
 
-        val folderArray =
-            try {
-                options.getAsJsonArray("effectiveWorkspaceFolders")
-            } catch (e: Exception) {
-                logger.warn(e) { "Error parsing effectiveWorkspaceFolders" }
-                return emptyList()
-            }
+        try {
+            val initOptions = gson.fromJson(options as JsonObject, InitializationOptions::class.java)
 
-        val uris = mutableListOf<String>()
-        folderArray.forEach { element ->
-            if (element is JsonObject && element.has("uri")) {
-                try {
-                    val uri = element.get("uri").asString
-                    uris.add(uri)
-                } catch (e: Exception) {
-                    logger.warn(e) { "Failed to extract URI from workspace folder" }
-                }
-            }
+            return initOptions.effectiveWorkspaceFolders
+                ?.mapNotNull { it.uri.takeIf(String::isNotBlank) }
+                ?: emptyList()
+        } catch (e: Exception) {
+            logger.warn(e) { "Error parsing effectiveWorkspaceFolders" }
+            return emptyList()
         }
-
-        return uris
     }
 }

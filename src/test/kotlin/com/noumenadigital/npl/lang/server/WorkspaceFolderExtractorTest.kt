@@ -40,8 +40,10 @@ class WorkspaceFolderExtractorTest :
                 val uri2 = "file:///test/uri2"
                 val standardFolders = listOf(uri1, uri2)
 
+                val options = JsonObject()
+
                 // Execute
-                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(null, standardFolders)
+                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(options, standardFolders)
 
                 // Verify
                 result.shouldContainExactlyInAnyOrder(uri1, uri2)
@@ -68,9 +70,15 @@ class WorkspaceFolderExtractorTest :
                 // Setup
                 val uri1 = "file:///test/uri1"
 
+                // Create one invalid JSON object (missing uri) and one valid
                 val effectiveWorkspaceFolders =
                     JsonArray().apply {
-                        add(JsonObject()) // Missing uri field
+                        add(
+                            JsonObject().apply {
+                                addProperty("name", "missingUri")
+                                // No URI property
+                            },
+                        )
                         add(createWorkspaceFolderJson(uri1, "folder1"))
                     }
 
@@ -82,7 +90,7 @@ class WorkspaceFolderExtractorTest :
                 // Execute
                 val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(options, null)
 
-                // Verify
+                // Verify - With the fixed implementation, only valid URIs should be included
                 result.shouldContainExactly(uri1)
             }
 
@@ -94,7 +102,24 @@ class WorkspaceFolderExtractorTest :
                 result.shouldBeEmpty()
             }
 
-            test("should handle non-JsonObject initializationOptions") {
+            test("should handle null effectiveWorkspaceFolders") {
+                // Setup
+                val uri1 = "file:///test/uri1"
+                val standardFolders = listOf(uri1)
+
+                val options =
+                    JsonObject().apply {
+                        addProperty("effectiveWorkspaceFolders", null as String?)
+                    }
+
+                // Execute
+                val result = WorkspaceFolderExtractor.extractWorkspaceFolderUris(options, standardFolders)
+
+                // Verify
+                result.shouldContainExactly(uri1)
+            }
+
+            test("should handle non-JsonObject input") {
                 // Setup
                 val uri1 = "file:///test/uri1"
                 val standardFolders = listOf(uri1)
