@@ -57,10 +57,10 @@ class LanguageServer(
                 ?.mapNotNull { it.uri }
 
         val nplRootUris =
-            WorkspaceFolderExtractor.extractWorkspaceFolderUris(
-                params.initializationOptions,
-                standardWorkspaceFolderUris,
-            )
+            WorkspaceFolderExtractor
+                .extractUrisFromInitializationOptions(
+                    params.initializationOptions,
+                ).takeIf { it.isNotEmpty() } ?: standardWorkspaceFolderUris ?: emptyList()
 
         if (nplRootUris.isNotEmpty()) {
             logger.info("Preloading sources for workspace folders: $nplRootUris")

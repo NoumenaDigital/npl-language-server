@@ -19,10 +19,14 @@ object WorkspaceFolderExtractor {
     private val gson = Gson()
 
     fun extractWorkspaceFolderUris(
-        initializationOptions: Any?,
+        effectiveWorkspaceFolders: List<EffectiveWorkspaceFolder>?,
         standardWorkspaceFolderUris: List<String>?,
     ): List<String> {
-        val effectiveUris = extractUrisFromEffectiveWorkspaceFolders(initializationOptions)
+        val effectiveUris =
+            effectiveWorkspaceFolders
+                ?.mapNotNull { wsf -> wsf.uri.takeIf { !it.isNullOrBlank() } }
+                ?: emptyList()
+
         if (effectiveUris.isNotEmpty()) {
             logger.info("Using ${effectiveUris.size} URIs from effectiveWorkspaceFolders")
             return effectiveUris
@@ -40,17 +44,14 @@ object WorkspaceFolderExtractor {
         return standardUris
     }
 
-    private fun extractUrisFromEffectiveWorkspaceFolders(options: Any?): List<String> {
+    fun extractUrisFromInitializationOptions(options: Any?): List<String> {
         if (options == null || options !is JsonObject) {
             return emptyList()
         }
 
         try {
             val initOptions = gson.fromJson(options, InitializationOptions::class.java)
-
-            return initOptions.effectiveWorkspaceFolders
-                ?.mapNotNull { wsf -> wsf.uri.takeIf { !it.isNullOrBlank() } }
-                ?: emptyList()
+            return extractWorkspaceFolderUris(initOptions.effectiveWorkspaceFolders, null)
         } catch (e: Exception) {
             logger.warn(e) { "Error parsing effectiveWorkspaceFolders" }
             return emptyList()
