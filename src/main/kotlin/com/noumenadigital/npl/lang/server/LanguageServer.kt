@@ -2,12 +2,14 @@ package com.noumenadigital.npl.lang.server
 
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
+import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.DidSaveTextDocumentParams
+import org.eclipse.lsp4j.FileChangeType
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.ServerCapabilities
@@ -87,7 +89,20 @@ class LanguageServer(
             }
         }
 
-        override fun didClose(params: DidCloseTextDocumentParams?) { /* no-op */ }
+        override fun didClose(params: DidCloseTextDocumentParams?) {
+            params?.let {
+                val uri = it.textDocument.uri
+                // Only need to take action if the file no longer exists on disk
+                val path =
+                    java.nio.file.Paths
+                        .get(java.net.URI.create(uri))
+                if (!java.nio.file.Files
+                        .exists(path)
+                ) {
+                    compilerService.removeSource(uri)
+                }
+            }
+        }
 
         override fun didSave(params: DidSaveTextDocumentParams?) { /* no-op -- compilation occurs on change */ }
     }
@@ -95,6 +110,18 @@ class LanguageServer(
     inner class WorkspaceHandler : WorkspaceService {
         override fun didChangeConfiguration(params: DidChangeConfigurationParams?) {}
 
-        override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams?) {}
+        override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams?) {
+            params?.changes?.forEach { change ->
+                if (change.type == FileChangeType.Deleted) {
+                    compilerService.removeSource(change.uri)
+                }
+            }
+        }
+
+        override fun didDeleteFiles(params: DeleteFilesParams?) {
+            params?.files?.forEach { file ->
+                compilerService.removeSource(file.uri)
+            }
+        }
     }
 }

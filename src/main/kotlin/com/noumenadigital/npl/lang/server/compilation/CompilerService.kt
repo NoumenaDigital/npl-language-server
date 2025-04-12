@@ -28,6 +28,8 @@ interface CompilerService {
         @Language("NPL") content: String,
     )
 
+    fun removeSource(uri: String)
+
     fun preloadSources(nplRootUri: String)
 }
 
@@ -96,6 +98,20 @@ class DefaultCompilerService(
             modifiedSources.add(uri)
             compileIfNeeded()
         }
+    }
+
+    override fun removeSource(uri: String) {
+        // Remove from sources if it exists
+        sources.remove(uri)
+
+        // Always mark as modified to force recompilation
+        // This is necessary to ensure that references to the deleted file in other files
+        // are properly marked as errors, even if the deleted file wasn't in our cache
+        modifiedSources.add(uri)
+        compileIfNeeded()
+
+        // Always send empty diagnostics to clear any existing diagnostics for this URI
+        clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, emptyList()))
     }
 
     override fun preloadSources(nplRootUri: String) {

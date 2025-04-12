@@ -194,6 +194,68 @@ class LanguageServerIntegrationTest : FunSpec() {
                     )
                 }
             }
+
+            test("keeps diagnostics when a document is closed but clears them when file is deleted") {
+                withLanguageServer { client ->
+                    val uri = "file:///test/DeleteTest.npl"
+                    val normalizedUri = normalizeUri(uri)
+                    val invalidCode = "package test\n\nfunction foo() -> InvalidType();"
+
+                    client.expectDiagnostics()
+                    client.openDocument(uri, invalidCode)
+
+                    client.waitForDiagnostics(timeoutSeconds, TimeUnit.SECONDS) shouldBe true
+                    client.hasDiagnosticsForUri(normalizedUri) shouldBe true
+
+                    // First, close the document (which should NOT clear diagnostics)
+                    client.deleteDocument(uri)
+
+                    // Diagnostics should still exist for closed documents
+                    client.hasDiagnosticsForUri(normalizedUri) shouldBe true
+
+                    // Now, simulate file deletion (which SHOULD clear diagnostics)
+                    // We need to handle the publication of empty diagnostics
+                    client.expectDiagnostics()
+
+                    client.deleteFile(uri)
+
+                    client.waitForDiagnostics(timeoutSeconds, TimeUnit.SECONDS) shouldBe true
+
+                    val latestDiagnostics = client.getDiagnostics(normalizedUri)
+
+                    latestDiagnostics?.diagnostics shouldBe emptyList()
+                }
+            }
+
+            test("closing a non-existent file removes it from sources") {
+                withLanguageServer { client ->
+                    val uri = "file:///test/CloseTest.npl"
+                    val normalizedUri = normalizeUri(uri)
+                    val invalidCode = "package test\n\nfunction foo() -> InvalidType();"
+
+                    // First, add the file with errors
+                    client.expectDiagnostics()
+                    client.openDocument(uri, invalidCode)
+
+                    client.waitForDiagnostics(timeoutSeconds, TimeUnit.SECONDS) shouldBe true
+                    client.hasDiagnosticsForUri(normalizedUri) shouldBe true
+
+                    // Clear diagnostics to prepare for the next publication
+                    client.clearDiagnostics()
+                    client.expectDiagnostics()
+
+                    // Close the document (which will remove the source since the file doesn't exist)
+                    client.deleteDocument(uri)
+
+                    // Wait for diagnostics to be cleared
+                    Thread.sleep(1000)
+
+                    // Verify diagnostics are cleared for the removed file
+                    val latestDiagnostics = client.getDiagnostics(normalizedUri)
+                    latestDiagnostics shouldNotBe null
+                    latestDiagnostics!!.diagnostics shouldBe emptyList()
+                }
+            }
         }
 
         test("custom compiler service can be provided") {
@@ -203,6 +265,8 @@ class LanguageServerIntegrationTest : FunSpec() {
                         uri: String,
                         content: String,
                     ) {}
+
+                    override fun removeSource(uri: String) {}
 
                     override fun preloadSources(nplRootUri: String) {}
                 }
@@ -261,6 +325,10 @@ class CompilerServiceSpy(
         uri: String,
         content: String,
     ) = delegate.updateSource(uri, content)
+
+    override fun removeSource(uri: String) {
+        delegate.removeSource(uri)
+    }
 
     override fun preloadSources(nplRootUri: String) {
         preloadSourcesCalled = true

@@ -8,6 +8,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import io.mockk.verify
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
+import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent
@@ -83,6 +84,24 @@ class LanguageServerTest :
                 )
 
                 verify { compilerMock.updateSource("file:///test.npl", "updated content") }
+            }
+
+            test("didClose removes source if file doesn't exist") {
+                val compilerMock = mockk<CompilerService>(relaxed = true)
+                val server =
+                    createTestServer(
+                        compilerServiceFactory = { compilerMock },
+                    )
+
+                server.initialize(InitializeParams()).get()
+
+                val docIdentifier = VersionedTextDocumentIdentifier("file:///test.npl", 3)
+                server.textDocumentService.didClose(
+                    DidCloseTextDocumentParams(docIdentifier),
+                )
+
+                // For non-existent file URIs, didClose should call removeSource
+                verify(exactly = 1) { compilerMock.removeSource("file:///test.npl") }
             }
         }
 
