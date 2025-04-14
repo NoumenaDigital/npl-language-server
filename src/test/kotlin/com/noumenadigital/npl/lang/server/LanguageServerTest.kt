@@ -1,5 +1,7 @@
 package com.noumenadigital.npl.lang.server
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.util.LanguageServerFixtures.createTestServer
 import com.noumenadigital.npl.lang.server.util.SafeSystemExitHandler
@@ -37,7 +39,138 @@ class LanguageServerTest :
                 val result = server.initialize(params).get()
 
                 result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
-                verify { compilerMock.preloadSources("file:///test/workspace") }
+                verify { compilerMock.preloadSources(listOf("file:///test/workspace")) }
+            }
+
+            test("initialization with effectiveWorkspaceFolders") {
+                val compilerMock = mockk<CompilerService>(relaxed = true)
+                val server =
+                    createTestServer(
+                        compilerServiceFactory = { compilerMock },
+                    )
+
+                // Create effectiveWorkspaceFolders in initializationOptions
+                val effectiveFolder1 =
+                    JsonObject().apply {
+                        addProperty("uri", "file:///effective/workspace1")
+                        addProperty("name", "Effective1")
+                    }
+                val effectiveFolder2 =
+                    JsonObject().apply {
+                        addProperty("uri", "file:///effective/workspace2")
+                        addProperty("name", "Effective2")
+                    }
+                val effectiveFolders =
+                    JsonArray().apply {
+                        add(effectiveFolder1)
+                        add(effectiveFolder2)
+                    }
+                val options =
+                    JsonObject().apply {
+                        add("effectiveWorkspaceFolders", effectiveFolders)
+                    }
+
+                // Create standard workspace folders (which should be ignored)
+                val standardFolder = WorkspaceFolder("file:///standard/workspace", "Standard")
+
+                val params =
+                    InitializeParams().apply {
+                        workspaceFolders = listOf(standardFolder)
+                        initializationOptions = options
+                    }
+
+                val result = server.initialize(params).get()
+
+                result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
+                verify {
+                    compilerMock.preloadSources(
+                        match<List<String>> { uris ->
+                            uris.size == 2 &&
+                                uris.contains("file:///effective/workspace1") &&
+                                uris.contains("file:///effective/workspace2")
+                        },
+                    )
+                }
+            }
+
+            test("initialization with test sources") {
+                val compilerMock = mockk<CompilerService>(relaxed = true)
+                val server =
+                    createTestServer(
+                        compilerServiceFactory = { compilerMock },
+                    )
+
+                val workspaceFolder = WorkspaceFolder("file:///test/workspace", "Test")
+                val testSourcesUri = "file:///test/sources"
+
+                val options =
+                    JsonObject().apply {
+                        addProperty("testSourcesUri", testSourcesUri)
+                    }
+
+                val params =
+                    InitializeParams().apply {
+                        workspaceFolders = listOf(workspaceFolder)
+                        initializationOptions = options
+                    }
+
+                val result = server.initialize(params).get()
+
+                result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
+                verify {
+                    compilerMock.preloadSources(listOf(workspaceFolder.uri))
+                }
+            }
+
+            test("initialization with both effectiveWorkspaceFolders and testSourcesUri") {
+                val compilerMock = mockk<CompilerService>(relaxed = true)
+                val server =
+                    createTestServer(
+                        compilerServiceFactory = { compilerMock },
+                    )
+
+                val effectiveFolder1 =
+                    JsonObject().apply {
+                        addProperty("uri", "file:///effective/workspace1")
+                        addProperty("name", "Effective1")
+                    }
+                val effectiveFolder2 =
+                    JsonObject().apply {
+                        addProperty("uri", "file:///effective/workspace2")
+                        addProperty("name", "Effective2")
+                    }
+                val effectiveFolders =
+                    JsonArray().apply {
+                        add(effectiveFolder1)
+                        add(effectiveFolder2)
+                    }
+
+                val options =
+                    JsonObject().apply {
+                        add("effectiveWorkspaceFolders", effectiveFolders)
+                        addProperty("testSourcesUri", "file:///test/sources")
+                    }
+
+                val standardFolder = WorkspaceFolder("file:///standard/workspace", "Standard")
+
+                val params =
+                    InitializeParams().apply {
+                        workspaceFolders = listOf(standardFolder)
+                        initializationOptions = options
+                    }
+
+                val result = server.initialize(params).get()
+
+                result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
+                verify {
+                    compilerMock.preloadSources(
+                        match<List<String>> { uris ->
+                            uris.size == 2 &&
+                                uris.contains("file:///effective/workspace1") &&
+                                uris.contains("file:///effective/workspace2")
+                        },
+                    )
+                }
             }
 
             test("exit") {
