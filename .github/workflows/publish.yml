@@ -134,12 +134,29 @@ jobs:
       - name: "Install musl toolchain (Linux)"
         if: matrix.os == 'ubuntu' && matrix.static
         run: |
+          # Install musl packages
           sudo apt-get update
-          sudo apt-get install -y musl-tools
+          sudo apt-get install -y musl musl-dev musl-tools
+
+          # Create the required symlink for GraalVM native-image
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            sudo ln -s /usr/bin/musl-gcc /usr/bin/x86_64-linux-musl-gcc
+          elif [ "${{ matrix.arch }}" = "aarch64" ]; then
+            sudo ln -s /usr/bin/musl-gcc /usr/bin/aarch64-linux-musl-gcc
+          fi
+
+          # Verify installation
+          ls -la /usr/bin/musl-gcc
+          which musl-gcc
 
       - name: "Build language-server native binary (Linux static)"
         if: matrix.os == 'ubuntu' && matrix.static
-        run: mvn -Pnative -Dstatic=true package -DskipTests
+        run: |
+          # Add CheckToolchain flag to ensure proper musl compiler detection
+          NATIVE_IMAGE_OPTS="-H:+CheckToolchain"
+
+          # Build with static linking and musl
+          mvn -Pnative -Dstatic=true -Dnative.image.options="${NATIVE_IMAGE_OPTS}" package -DskipTests
 
       - name: "Build language-server native binary (non-Linux)"
         if: matrix.os != 'ubuntu' || !matrix.static
