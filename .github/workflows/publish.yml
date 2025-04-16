@@ -169,7 +169,7 @@ jobs:
         shell: pwsh
         run: |
           mkdir -p dist
-          if (Test-Path target/language-server.exe)
+          if (Test-Path target/language-server.exe) {
             Copy-Item target/language-server.exe -Destination dist/${{ matrix.output_name }}
           }
 
