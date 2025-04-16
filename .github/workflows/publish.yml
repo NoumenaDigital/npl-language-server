@@ -138,15 +138,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y musl musl-dev musl-tools
 
-          # Create the required symlink for GraalVM native-image
-          if [ "${{ matrix.arch }}" = "x86_64" ]; then
-            sudo ln -s /usr/bin/musl-gcc /usr/bin/x86_64-linux-musl-gcc
-          elif [ "${{ matrix.arch }}" = "aarch64" ]; then
-            sudo ln -s /usr/bin/musl-gcc /usr/bin/aarch64-linux-musl-gcc
-          fi
-
           # Verify installation
-          ls -la /usr/bin/musl-gcc
+          echo "Musl-gcc location:"
           which musl-gcc
 
       - name: "Build language-server native binary (Linux static)"
