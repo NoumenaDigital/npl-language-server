@@ -134,9 +134,9 @@ jobs:
       - name: "Install musl toolchain (Linux)"
         if: matrix.os == 'ubuntu' && matrix.static
         run: |
-          # Install musl packages
+          # Install musl and zlib development packages
           sudo apt-get update
-          sudo apt-get install -y musl musl-dev musl-tools
+          sudo apt-get install -y musl musl-dev musl-tools zlib1g-dev
 
           # Verify installation
           echo "Musl-gcc location:"
@@ -145,11 +145,13 @@ jobs:
       - name: "Build language-server native binary (Linux static)"
         if: matrix.os == 'ubuntu' && matrix.static
         run: |
-          # Add CheckToolchain flag to ensure proper musl compiler detection
-          NATIVE_IMAGE_OPTS="-H:+CheckToolchain"
+          # Find where libz.a is located
+          LIBZ_PATH=$(find /usr/lib -name "libz.a" | head -n 1)
+          LIBZ_DIR=$(dirname "$LIBZ_PATH")
+          echo "Found libz.a at: $LIBZ_PATH"
 
-          # Build with static linking and musl
-          mvn -Pnative -Dstatic=true -Dnative.image.options="${NATIVE_IMAGE_OPTS}" package -DskipTests
+          # Build with static linking and musl, adding the library path
+          mvn -Pnative -Dstatic=true -Dnative.image.options="-H:CLibraryPath=$LIBZ_DIR" package -DskipTests
 
       - name: "Build language-server native binary (non-Linux)"
         if: matrix.os != 'ubuntu' || !matrix.static
