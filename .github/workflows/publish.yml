@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - ST-4548_codespaces_muslc
   workflow_dispatch:
     inputs:
       release_tag:
@@ -48,6 +49,7 @@ jobs:
         with:
           fetch-depth: 0
 
+
       - name: "Check Release Flag"
         id: check-release-flag
         run: |
@@ -59,6 +61,7 @@ jobs:
 
           # Extract the should_release value and set as output
           SHOULD_RELEASE=$(echo "$OUTPUT" | grep "should_release=" | cut -d= -f2)
+
           echo "should_release=$SHOULD_RELEASE" >> $GITHUB_OUTPUT
 
           # Display the full output for debugging
@@ -98,10 +101,12 @@ jobs:
             runner: ubuntu-latest
             arch: x86_64
             output_name: language-server-linux-x86_64
+            static: true
           - os: ubuntu
             runner: linux-arm-64
             arch: aarch64
             output_name: language-server-linux-aarch64
+            static: true
           - os: macos
             runner: macos-13
             arch: x86_64
@@ -126,7 +131,18 @@ jobs:
           java-version: "21"
           cache: "maven"
 
-      - name: "Build language-server native binary"
+      - name: "Install musl toolchain (Linux)"
+        if: matrix.os == 'ubuntu' && matrix.static
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: "Build language-server native binary (Linux static)"
+        if: matrix.os == 'ubuntu' && matrix.static
+        run: mvn -Pnative -Dstatic=true package -DskipTests
+
+      - name: "Build language-server native binary (non-Linux)"
+        if: matrix.os != 'ubuntu' || !matrix.static
         run: mvn -Pnative package -DskipTests
 
       - name: "Prepare binary for upload (Linux/macOS)"
@@ -155,27 +171,28 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  create-release:
-    name: "Create GitHub Release"
-    needs: [determine-version, build-native]
-    if: needs.determine-version.outputs.should_release == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Download individual artifacts"
-        uses: actions/download-artifact@v4
-        with:
-          path: ./individual-artifacts
-
-      - name: "Create Release"
-        id: create_release
-        uses: ncipollo/release-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ needs.determine-version.outputs.release_tag }}
-          name: ${{ needs.determine-version.outputs.release_name }}
-          body: "NPL Language Server release ${{ needs.determine-version.outputs.release_tag }}"
-          commit: ${{ github.sha }}
-          draft: ${{ github.event.inputs.draft || false }}
-          prerelease: ${{ github.event.inputs.prerelease || false }}
-          artifacts: "./individual-artifacts/*/*"
-          artifactErrorsFailBuild: true
+# TODO: Uncomment this
+#  create-release:
+#    name: "Create GitHub Release"
+#    needs: [determine-version, build-native]
+#    if: needs.determine-version.outputs.should_release == 'true'
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: "Download individual artifacts"
+#        uses: actions/download-artifact@v4
+#        with:
+#          path: ./individual-artifacts
+#
+#      - name: "Create Release"
+#        id: create_release
+#        uses: ncipollo/release-action@v1
+#        with:
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          tag: ${{ needs.determine-version.outputs.release_tag }}
+#          name: ${{ needs.determine-version.outputs.release_name }}
+#          body: "NPL Language Server release ${{ needs.determine-version.outputs.release_tag }}"
+#          commit: ${{ github.sha }}
+#          draft: ${{ github.event.inputs.draft || false }}
+#          prerelease: ${{ github.event.inputs.prerelease || false }}
+#          artifacts: "./individual-artifacts/*/*"
+#          artifactErrorsFailBuild: true
