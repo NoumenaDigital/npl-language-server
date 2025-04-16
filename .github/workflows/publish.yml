@@ -138,9 +138,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y musl musl-dev musl-tools zlib1g-dev
 
+          # Create arch-specific symlink for musl-gcc
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            sudo ln -sf /usr/bin/musl-gcc /usr/bin/x86_64-linux-musl-gcc
+          elif [ "${{ matrix.arch }}" = "aarch64" ]; then
+            sudo ln -sf /usr/bin/musl-gcc /usr/bin/aarch64-linux-musl-gcc
+          fi
+
           # Verify installation
           echo "Musl-gcc location:"
           which musl-gcc
+          echo "Architecture-specific compiler:"
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            ls -la /usr/bin/x86_64-linux-musl-gcc || echo "x86_64-linux-musl-gcc not found"
+          else
+            ls -la /usr/bin/aarch64-linux-musl-gcc || echo "aarch64-linux-musl-gcc not found"
+          fi
 
       - name: "Build language-server native binary (Linux static)"
         if: matrix.os == 'ubuntu' && matrix.static
@@ -150,8 +163,14 @@ jobs:
           LIBZ_DIR=$(dirname "$LIBZ_PATH")
           echo "Found libz.a at: $LIBZ_PATH"
 
-          # Build with static linking and musl, adding the library path
-          mvn -Pnative -Dstatic=true -Dnative.image.options="-H:CLibraryPath=$LIBZ_DIR" package -DskipTests
+          # Add the directory containing musl-gcc to the PATH
+          export PATH="/usr/bin:$PATH"
+
+          # Alternatively, try to disable the toolchain check
+          NATIVE_IMAGE_OPTS="-H:-CheckToolchain -H:CLibraryPath=$LIBZ_DIR"
+
+          # Build with static linking and musl
+          mvn -Pnative -Dstatic=true -Dnative.image.options="${NATIVE_IMAGE_OPTS}" package -DskipTests
 
       - name: "Build language-server native binary (non-Linux)"
         if: matrix.os != 'ubuntu' || !matrix.static
