@@ -5,7 +5,11 @@ import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
+import org.eclipse.lsp4j.DidChangeWatchedFilesParams
+import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
+import org.eclipse.lsp4j.FileChangeType
+import org.eclipse.lsp4j.FileEvent
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.MessageActionItem
@@ -74,6 +78,16 @@ class TestLanguageClient(
         )
     }
 
+    fun deleteDocument(uri: String) {
+        val identifier = VersionedTextDocumentIdentifier(uri, 3)
+        server.textDocumentService.didClose(DidCloseTextDocumentParams(identifier))
+    }
+
+    fun deleteFile(uri: String) {
+        val change = FileEvent(uri, FileChangeType.Deleted)
+        server.workspaceService.didChangeWatchedFiles(DidChangeWatchedFilesParams(listOf(change)))
+    }
+
     fun expectDiagnostics() = synchronized(allDiagnostics) { diagnosticsLatch = CountDownLatch(1) }
 
     fun clearDiagnostics() = synchronized(allDiagnostics) { allDiagnostics.clear() }
@@ -108,6 +122,11 @@ class TestLanguageClient(
             return allDiagnostics
                 .filter { normalizeUri(it.uri) == normalizeUri(normalizedUri) }
                 .flatMap { it.diagnostics }
+        }
+
+    fun getDiagnostics(normalizedUri: String): PublishDiagnosticsParams? =
+        synchronized(allDiagnostics) {
+            return allDiagnostics.lastOrNull { normalizeUri(it.uri) == normalizeUri(normalizedUri) }
         }
 
     fun shutdown(): CompletableFuture<Any> = server.shutdown()
