@@ -138,14 +138,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y musl musl-dev musl-tools zlib1g-dev
 
-          # Create arch-specific symlink for musl-gcc
-          if [ "${{ matrix.arch }}" = "x86_64" ]; then
-            sudo ln -sf /usr/bin/musl-gcc /usr/bin/x86_64-linux-musl-gcc
-          elif [ "${{ matrix.arch }}" = "aarch64" ]; then
-            sudo ln -sf /usr/bin/musl-gcc /usr/bin/aarch64-linux-musl-gcc
-          fi
-
-          # Verify installation
+          # Only verify arch-specific compiler exists, don't create symlinks
           echo "Musl-gcc location:"
           which musl-gcc
           echo "Architecture-specific compiler:"
