@@ -95,11 +95,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu
-            runner: ubuntu-latest
+            runner: ubuntu-22_04
             arch: x86_64
             output_name: language-server-linux-x86_64
           - os: ubuntu
-            runner: linux-arm-64
+            runner: ubuntu-22.04-arm
             arch: aarch64
             output_name: language-server-linux-aarch64
           - os: macos
