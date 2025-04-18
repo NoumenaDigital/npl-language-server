@@ -36,18 +36,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  determine-version:
-    name: "Determine Release Version"
-    runs-on: ubuntu-latest
-    outputs:
-      release_tag: ${{ steps.set-version.outputs.release_tag }}
-      release_name: ${{ steps.set-version.outputs.release_name }}
-      should_release: ${{ steps.check-release-flag.outputs.should_release }}
-    steps:
-      - name: "Checkout"
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  # determine-version:
+  #   name: "Determine Release Version"
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     release_tag: ${{ steps.set-version.outputs.release_tag }}
+  #     release_name: ${{ steps.set-version.outputs.release_name }}
+  #     should_release: ${{ steps.check-release-flag.outputs.should_release }}
+  #   steps:
+  #     - name: "Checkout"
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
 
       # - name: "Check Release Flag"
@@ -150,20 +150,7 @@ jobs:
 
       - name: "Build language-server native binary (Linux static)"
         if: matrix.os == 'ubuntu' && matrix.static
-        run: |
-          # Find where libz.a is located
-          LIBZ_PATH=$(find /usr/lib -name "libz.a" | head -n 1)
-          LIBZ_DIR=$(dirname "$LIBZ_PATH")
-          echo "Found libz.a at: $LIBZ_PATH"
-
-          # Add the directory containing musl-gcc to the PATH
-          export PATH="/usr/bin:$PATH"
-
-          # Alternatively, try to disable the toolchain check
-          NATIVE_IMAGE_OPTS="-H:-CheckToolchain -H:CLibraryPath=$LIBZ_DIR"
-
-          # Build with static linking and musl
-          mvn -Pnative -Dstatic=true -Dnative.image.options="${NATIVE_IMAGE_OPTS}" package -DskipTests
+        run: mvn -Pnative package -DskipTests
 
       - name: "Build language-server native binary (non-Linux)"
         if: matrix.os != 'ubuntu' || !matrix.static
