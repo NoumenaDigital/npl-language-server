@@ -95,7 +95,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu
-            runner: ubuntu-22.04
+            runner: ubuntu-20.04
             arch: x86_64
             output_name: language-server-linux-x86_64
           - os: ubuntu
