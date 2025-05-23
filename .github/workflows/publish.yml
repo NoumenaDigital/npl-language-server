@@ -103,18 +103,22 @@ jobs:
             runner: linux-arm-64
             arch: aarch64
             output_name: language-server-linux-aarch64
+            static: false
           - os: macos
             runner: macos-13
             arch: x86_64
             output_name: language-server-macos-x86_64
+            static: false
           - os: macos
             runner: macos-latest
             arch: aarch64
             output_name: language-server-macos-aarch64
+            static: false
           - os: windows
             runner: windows-latest
             arch: x86_64
             output_name: language-server-windows-x86_64.exe
+            static: false
 
     steps:
       - name: "Checkout"
