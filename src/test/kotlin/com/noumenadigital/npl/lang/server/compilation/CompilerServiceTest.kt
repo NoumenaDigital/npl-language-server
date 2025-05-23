@@ -11,6 +11,7 @@ import com.noumenadigital.npl.lang.server.util.NplFileFixtures.withTempDirectory
 import com.noumenadigital.npl.lang.server.util.TestLanguageClient
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.intellij.lang.annotations.Language
 import java.nio.file.Files
@@ -380,6 +381,31 @@ class CompilerServiceTest :
                         sourceUris.any { it.contains(testDir.fileName.toString()) } shouldBe true
                     }
                 }
+            }
+        }
+
+        context("Document handling") {
+            test("removing a non-existent source forces recompilation") {
+                val testClient = TestLanguageClient()
+                val clientProvider = LanguageClientProvider().apply { client = testClient }
+                val service = DefaultCompilerService(clientProvider)
+
+                // First add a valid source
+                val validCode =
+                    """
+                    package test
+
+                    function foo() returns Number -> 42;
+                    """.trimIndent()
+                service.updateSource("file:///valid.npl", validCode)
+
+                // Now remove a source that doesn't exist
+                service.removeSource("file:///non-existent.npl")
+
+                // Verify empty diagnostics are published for the non-existent file
+                val diagnostics = testClient.diagnostics.lastOrNull { it.uri == "file:///non-existent.npl" }
+                diagnostics shouldNotBe null
+                diagnostics!!.diagnostics shouldBe emptyList()
             }
         }
     })
