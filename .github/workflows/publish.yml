@@ -103,7 +103,6 @@ jobs:
             runner: linux-arm-64
             arch: aarch64
             output_name: language-server-linux-aarch64
-            static: false
           - os: macos
             runner: macos-13
             arch: x86_64
@@ -128,8 +127,8 @@ jobs:
           java-version: "21"
           cache: "maven"
 
-      - name: "Install musl toolchain and build static zlib (Linux)"
-        if: matrix.os == 'ubuntu' && matrix.static
+      - name: "Install musl toolchain and build static zlib"
+        if: matrix.static
         run: |
           # Install musl toolchain
           sudo apt-get update
@@ -154,12 +153,12 @@ jobs:
           echo "Checking for musl zlib:"
           ls -la /usr/lib/x86_64-linux-musl/libz.a
 
-      - name: "Build language-server native binary (Linux static)"
-        if: matrix.os == 'ubuntu' && matrix.static
+      - name: "Build language-server native binary (static linking)"
+        if: matrix.static
         run: mvn -Pnative,native-static-linux -Dstatic=true package -DskipTests
 
-      - name: "Build language-server native binary (non-Linux)"
-        if: matrix.os != 'ubuntu' || !matrix.static
+      - name: "Build language-server native binary (standard/dynamic linking)"
+        if: ! matrix.static
         run: mvn -Pnative package -DskipTests
 
       - name: "Prepare binary for upload (Linux/macOS)"
