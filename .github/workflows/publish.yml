@@ -132,7 +132,7 @@ jobs:
           cache: "maven"
 
       - name: "Install musl toolchain and build static zlib"
-        if: matrix.static
+        if: matrix.static == true
         run: |
           # Install musl toolchain
           sudo apt-get update
@@ -158,11 +158,11 @@ jobs:
           ls -la /usr/lib/x86_64-linux-musl/libz.a
 
       - name: "Build language-server native binary (static linking)"
-        if: matrix.static
+        if: matrix.static == true
         run: mvn -Pnative,native-static-linux -Dstatic=true package -DskipTests
 
       - name: "Build language-server native binary (standard/dynamic linking)"
-        if: ! matrix.static
+        if: matrix.static == false
         run: mvn -Pnative package -DskipTests
 
       - name: "Prepare binary for upload (Linux/macOS)"
