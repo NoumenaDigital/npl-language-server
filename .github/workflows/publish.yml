@@ -106,7 +106,7 @@ jobs:
             runner: linux-arm-64
             arch: aarch64
             output_name: language-server-linux-aarch64
-            static: true
+            static: false
           - os: macos
             runner: macos-13
             arch: x86_64
