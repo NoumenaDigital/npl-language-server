@@ -131,26 +131,35 @@ jobs:
           java-version: "21"
           cache: "maven"
 
-      - name: "Install musl toolchain (Linux)"
+      - name: "Install musl toolchain and build static zlib (Linux)"
         if: matrix.os == 'ubuntu' && matrix.static
         run: |
-          # Install musl and zlib development packages
+          # Install musl toolchain
           sudo apt-get update
-          sudo apt-get install -y musl musl-dev musl-tools zlib1g-dev
+          sudo apt-get install -y musl musl-dev musl-tools build-essential wget
 
-          # Only verify arch-specific compiler exists, don't create symlinks
-          echo "Musl-gcc location:"
-          which musl-gcc
-          echo "Architecture-specific compiler:"
-          if [ "${{ matrix.arch }}" = "x86_64" ]; then
-            ls -la /usr/bin/x86_64-linux-musl-gcc || echo "x86_64-linux-musl-gcc not found"
-          else
-            ls -la /usr/bin/aarch64-linux-musl-gcc || echo "aarch64-linux-musl-gcc not found"
-          fi
+          # Build zlib statically with musl
+          cd /tmp
+          wget https://zlib.net/zlib-1.3.1.tar.gz
+          tar -xzf zlib-1.3.1.tar.gz
+          cd zlib-1.3.1
+
+          # Configure and build zlib with musl
+          CC=musl-gcc ./configure --static --prefix=/usr/local/musl
+          make
+          sudo make install
+
+          # Create symlink for the linker to find it
+          sudo mkdir -p /usr/lib/x86_64-linux-musl
+          sudo ln -sf /usr/local/musl/lib/libz.a /usr/lib/x86_64-linux-musl/libz.a
+
+          # Verify installation
+          echo "Checking for musl zlib:"
+          ls -la /usr/lib/x86_64-linux-musl/libz.a
 
       - name: "Build language-server native binary (Linux static)"
         if: matrix.os == 'ubuntu' && matrix.static
-        run: mvn -Pnative package -DskipTests
+        run: mvn -Pnative,native-static-linux -Dstatic=true package -DskipTests
 
       - name: "Build language-server native binary (non-Linux)"
         if: matrix.os != 'ubuntu' || !matrix.static
