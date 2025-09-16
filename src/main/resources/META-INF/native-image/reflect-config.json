@@ -85,14 +85,14 @@
 {
   "name":"com.noumenadigital.npl.lang.server.EffectiveWorkspaceFolder",
   "allDeclaredFields":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }],
-  "unsafeAllocated": true
+  "unsafeAllocated":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"com.noumenadigital.npl.lang.server.InitializationOptions",
   "allDeclaredFields":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }],
-  "unsafeAllocated": true
+  "unsafeAllocated":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"com.noumenadigital.npl.lang.server.LanguageServer",

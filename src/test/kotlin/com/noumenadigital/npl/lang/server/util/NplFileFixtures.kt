@@ -54,8 +54,14 @@ object NplFileFixtures {
     }
 
     fun simpleValidCode(): String =
+        // language=NPL
         """
         package test
+        use stdlib.v1.collection.range
+
+        function f() -> {
+            range(1, 4, 1);
+        };
 
         struct Simple {
             value: Number
