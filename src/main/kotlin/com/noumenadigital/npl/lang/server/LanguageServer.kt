@@ -42,7 +42,7 @@ class LanguageServer(
     private val clientProvider: LanguageClientProvider = LanguageClientProvider(),
     private val compilerServiceFactory: (LanguageClientProvider) -> CompilerService = ::DefaultCompilerService,
     private val systemExitHandler: SystemExitHandler = DefaultSystemExitHandler(),
-    private val gson: Gson = Gson()
+    private val gson: Gson = Gson(),
 ) : LanguageServer,
     LanguageClientAware {
     private val compilerService by lazy { compilerServiceFactory(clientProvider) }
@@ -82,7 +82,7 @@ class LanguageServer(
     }
 
     private fun extractInitializeOptions(options: Any?): InitializationOptions {
-        val defaultOptions = InitializationOptions(null);
+        val defaultOptions = InitializationOptions(null)
         if (options == null || options !is JsonObject) {
             return defaultOptions
         }
@@ -149,7 +149,7 @@ class LanguageServer(
             }
         }
 
-        override fun didSave(params: DidSaveTextDocumentParams?) { /* no-op -- compilation occurs on change */
+        override fun didSave(params: DidSaveTextDocumentParams?) { // no-op -- compilation occurs on change
         }
     }
 

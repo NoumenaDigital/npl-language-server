@@ -29,7 +29,10 @@ class WorkspaceFolderExtractorTest :
                     }
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(Gson().fromJson(options, InitializationOptions::class.java))
+                val result =
+                    WorkspaceFolderExtractor.extractUrisFromInitializationOptions(
+                        Gson().fromJson(options, InitializationOptions::class.java),
+                    )
 
                 // Verify
                 result.shouldContainExactlyInAnyOrder(uri1, uri2)
@@ -40,7 +43,10 @@ class WorkspaceFolderExtractorTest :
                 val options = JsonObject()
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(Gson().fromJson(options, InitializationOptions::class.java))
+                val result =
+                    WorkspaceFolderExtractor.extractUrisFromInitializationOptions(
+                        Gson().fromJson(options, InitializationOptions::class.java),
+                    )
 
                 // Verify
                 result.shouldBeEmpty()
@@ -54,7 +60,10 @@ class WorkspaceFolderExtractorTest :
                     }
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(Gson().fromJson(options, InitializationOptions::class.java))
+                val result =
+                    WorkspaceFolderExtractor.extractUrisFromInitializationOptions(
+                        Gson().fromJson(options, InitializationOptions::class.java),
+                    )
 
                 // Verify
                 result.shouldBeEmpty()
@@ -82,7 +91,10 @@ class WorkspaceFolderExtractorTest :
                     }
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(Gson().fromJson(options, InitializationOptions::class.java))
+                val result =
+                    WorkspaceFolderExtractor.extractUrisFromInitializationOptions(
+                        Gson().fromJson(options, InitializationOptions::class.java),
+                    )
 
                 // Verify - With the fixed implementation, only valid URIs should be included
                 result.shouldContainExactly(uri1)
@@ -104,7 +116,10 @@ class WorkspaceFolderExtractorTest :
                     }
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(Gson().fromJson(options, InitializationOptions::class.java))
+                val result =
+                    WorkspaceFolderExtractor.extractUrisFromInitializationOptions(
+                        Gson().fromJson(options, InitializationOptions::class.java),
+                    )
 
                 // Verify
                 result.shouldBeEmpty()
