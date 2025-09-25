@@ -9,6 +9,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.delay
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
@@ -215,8 +216,16 @@ class LanguageServerTest :
                 server.textDocumentService.didChange(
                     DidChangeTextDocumentParams(docIdentifier, listOf(changeEvent)),
                 )
+                server.textDocumentService.didChange(
+                    DidChangeTextDocumentParams(docIdentifier, listOf(changeEvent)),
+                )
+                server.textDocumentService.didChange(
+                    DidChangeTextDocumentParams(docIdentifier, listOf(changeEvent)),
+                )
 
-                verify { compilerMock.updateSource("file:///test.npl", "updated content") }
+                delay(500)
+
+                verify(atMost = 1) { compilerMock.updateSource("file:///test.npl", "updated content") }
             }
 
             test("didClose removes source if file doesn't exist") {
