@@ -1,13 +1,13 @@
 package com.noumenadigital.npl.lang.server
 
 import com.google.gson.Gson
-import com.google.gson.JsonObject
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger { }
 
 data class InitializationOptions(
-    val effectiveWorkspaceFolders: List<EffectiveWorkspaceFolder>?,
+    val effectiveWorkspaceFolders: List<EffectiveWorkspaceFolder>? = emptyList(),
+    val nplServerDebouncingTimeMs: Int = 300,
 )
 
 data class EffectiveWorkspaceFolder(
@@ -44,14 +44,9 @@ object WorkspaceFolderExtractor {
         return standardUris
     }
 
-    fun extractUrisFromInitializationOptions(options: Any?): List<String> {
-        if (options == null || options !is JsonObject) {
-            return emptyList()
-        }
-
+    fun extractUrisFromInitializationOptions(initParams: InitializationOptions): List<String> {
         try {
-            val initOptions = gson.fromJson(options, InitializationOptions::class.java)
-            return extractWorkspaceFolderUris(initOptions.effectiveWorkspaceFolders, null)
+            return extractWorkspaceFolderUris(initParams.effectiveWorkspaceFolders, null)
         } catch (e: Exception) {
             logger.warn(e) { "Error parsing effectiveWorkspaceFolders" }
             return emptyList()

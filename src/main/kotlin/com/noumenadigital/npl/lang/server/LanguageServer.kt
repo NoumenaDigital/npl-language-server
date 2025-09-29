@@ -1,5 +1,7 @@
 package com.noumenadigital.npl.lang.server
 
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
 import mu.KotlinLogging
@@ -40,9 +42,11 @@ class LanguageServer(
     private val clientProvider: LanguageClientProvider = LanguageClientProvider(),
     private val compilerServiceFactory: (LanguageClientProvider) -> CompilerService = ::DefaultCompilerService,
     private val systemExitHandler: SystemExitHandler = DefaultSystemExitHandler(),
+    private val gson: Gson = Gson(),
 ) : LanguageServer,
     LanguageClientAware {
     private val compilerService by lazy { compilerServiceFactory(clientProvider) }
+    private lateinit var scheduler: LspScheduler
 
     private val textDocumentService = TextDocumentHandler()
     private val workspaceService = WorkspaceHandler()
@@ -58,10 +62,13 @@ class LanguageServer(
                 ?.filterNotNull()
                 ?.mapNotNull { it.uri }
 
+        val initParams: InitializationOptions = extractInitializeOptions(params.initializationOptions)
+        scheduler = LspScheduler(initParams.nplServerDebouncingTimeMs.toLong())
+
         val nplRootUris =
             WorkspaceFolderExtractor
                 .extractUrisFromInitializationOptions(
-                    params.initializationOptions,
+                    initParams,
                 ).takeIf { it.isNotEmpty() } ?: standardWorkspaceFolderUris ?: emptyList()
 
         if (nplRootUris.isNotEmpty()) {
@@ -74,11 +81,29 @@ class LanguageServer(
         return completedFuture(InitializeResult(capabilities))
     }
 
+    private fun extractInitializeOptions(options: Any?): InitializationOptions {
+        val defaultOptions = InitializationOptions(null)
+        if (options == null || options !is JsonObject) {
+            return defaultOptions
+        }
+
+        try {
+            val initOptions = gson.fromJson(options, InitializationOptions::class.java)
+            return initOptions
+        } catch (e: Exception) {
+            logger.warn(e) { "Error parsing init params" }
+            return defaultOptions
+        }
+    }
+
     private fun preloadSources(nplRootUris: List<String>) {
         compilerService.preloadSources(nplRootUris)
     }
 
-    override fun shutdown(): CompletableFuture<Any> = completedFuture(null)
+    override fun shutdown(): CompletableFuture<Any> {
+        scheduler.shutdown()
+        return completedFuture(null)
+    }
 
     override fun exit() {
         systemExitHandler.exit(0)
@@ -103,7 +128,9 @@ class LanguageServer(
 
         override fun didChange(params: DidChangeTextDocumentParams) {
             params.contentChanges.forEach { change ->
-                compilerService.updateSource(params.textDocument.uri, change.text)
+                scheduler.submit(params.textDocument.uri) {
+                    compilerService.updateSource(params.textDocument.uri, change.text)
+                }
             }
         }
 
@@ -122,7 +149,8 @@ class LanguageServer(
             }
         }
 
-        override fun didSave(params: DidSaveTextDocumentParams?) { /* no-op -- compilation occurs on change */ }
+        override fun didSave(params: DidSaveTextDocumentParams?) { // no-op -- compilation occurs on change
+        }
     }
 
     inner class WorkspaceHandler : WorkspaceService {

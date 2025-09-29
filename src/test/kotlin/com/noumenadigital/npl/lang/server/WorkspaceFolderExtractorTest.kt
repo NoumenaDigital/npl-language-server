@@ -1,5 +1,6 @@
 package com.noumenadigital.npl.lang.server
 
+import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import io.kotest.core.spec.style.FunSpec
@@ -28,7 +29,10 @@ class WorkspaceFolderExtractorTest :
                     }
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(options)
+                val result =
+                    WorkspaceFolderExtractor.extractUrisFromInitializationOptions(
+                        Gson().fromJson(options, InitializationOptions::class.java),
+                    )
 
                 // Verify
                 result.shouldContainExactlyInAnyOrder(uri1, uri2)
@@ -39,7 +43,10 @@ class WorkspaceFolderExtractorTest :
                 val options = JsonObject()
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(options)
+                val result =
+                    WorkspaceFolderExtractor.extractUrisFromInitializationOptions(
+                        Gson().fromJson(options, InitializationOptions::class.java),
+                    )
 
                 // Verify
                 result.shouldBeEmpty()
@@ -53,7 +60,10 @@ class WorkspaceFolderExtractorTest :
                     }
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(options)
+                val result =
+                    WorkspaceFolderExtractor.extractUrisFromInitializationOptions(
+                        Gson().fromJson(options, InitializationOptions::class.java),
+                    )
 
                 // Verify
                 result.shouldBeEmpty()
@@ -81,15 +91,18 @@ class WorkspaceFolderExtractorTest :
                     }
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(options)
+                val result =
+                    WorkspaceFolderExtractor.extractUrisFromInitializationOptions(
+                        Gson().fromJson(options, InitializationOptions::class.java),
+                    )
 
                 // Verify - With the fixed implementation, only valid URIs should be included
                 result.shouldContainExactly(uri1)
             }
 
-            test("should return empty list when options are null") {
+            test("should return empty list when options are defaults") {
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(null)
+                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(InitializationOptions())
 
                 // Verify
                 result.shouldBeEmpty()
@@ -103,16 +116,10 @@ class WorkspaceFolderExtractorTest :
                     }
 
                 // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions(options)
-
-                // Verify
-                result.shouldBeEmpty()
-            }
-
-            test("should handle non-JsonObject input") {
-                // Setup
-                // Execute
-                val result = WorkspaceFolderExtractor.extractUrisFromInitializationOptions("Not a JsonObject")
+                val result =
+                    WorkspaceFolderExtractor.extractUrisFromInitializationOptions(
+                        Gson().fromJson(options, InitializationOptions::class.java),
+                    )
 
                 // Verify
                 result.shouldBeEmpty()
