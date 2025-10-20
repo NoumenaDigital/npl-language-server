@@ -69,7 +69,8 @@ jobs:
         with:
           base: master
           title: "chore: bump platform to ${{ env.PLATFORM_VERSION }}"
-          commit-message: "Release: true"
+          body: "Release: true"
+          commit-message: "Updated platform version to ${{ env.PLATFORM_VERSION }}"
           branch: "Bump-platform-${{ env.PLATFORM_VERSION }}"
           delete-branch: true
           token: ${{ steps.generate-token-pr.outputs.token }}
