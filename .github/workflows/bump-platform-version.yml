@@ -21,9 +21,6 @@ env:
   SLACK_TITLE: " "
   SLACK_FOOTER: "npl-language-server#bump-platform-version.yml"
   MSG_MINIMAL: true
-  # Map required secrets into env for safer presence checks (avoids parser error on 'secrets' context in step-level if)
-  GH_ND_TOKEN_PR_APP_ID: ${{ secrets.GH_ND_TOKEN_PR_APP_ID }}
-  GH_ND_TOKEN_PR_APP_PRIVATE_KEY: ${{ secrets.GH_ND_TOKEN_PR_APP_PRIVATE_KEY }}
 
 jobs:
   update_pom:
@@ -45,10 +42,6 @@ jobs:
           distribution: "graalvm"
           java-version: "24"
           cache: "maven"
-
-      - name: "Echo resolved platform version"
-        run: |
-          echo "Resolved PLATFORM_VERSION='${PLATFORM_VERSION}' (event: ${{ github.event_name }})"
 
       - name: "Update platform version in pom"
         run: |
