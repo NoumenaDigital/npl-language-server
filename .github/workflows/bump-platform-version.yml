@@ -36,13 +36,6 @@ jobs:
           git config --global user.name "noumenadigital-bot"
           git config --global user.email "noumenadigital-bot@users.noreply.github.com"
 
-      - name: "Set up Maven"
-        uses: actions/setup-java@v4
-        with:
-          distribution: "graalvm"
-          java-version: "24"
-          cache: "maven"
-
       - name: "Update platform version in pom"
         run: |
           mvn -B versions:set-property -Dproperty=platform.version -DnewVersion="${PLATFORM_VERSION}" -DgenerateBackupPoms=false -DskipTests
@@ -66,21 +59,21 @@ jobs:
           commit-message: "Updated platform version to ${{ env.PLATFORM_VERSION }}"
           branch: "Bump-platform-${{ env.PLATFORM_VERSION }}"
           delete-branch: true
-          token: ${{ steps.generate-token-pr.outputs.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
 #      - name: "Enable auto-merge"
 #        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
 #        run: |
 #          gh pr merge "${{ steps.cpr.outputs.pull-request-url }}" --auto --squash
 #        env:
-#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          GH_TOKEN: ${{ steps.generate-token-pr.outputs.token }}
 
       - name: "Approve pull request"
         if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
         uses: juliangruber/approve-pull-request-action@v2
         with:
           number: ${{ steps.cpr.outputs.pull-request-number }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.generate-token-pr.outputs.token }}
 #
 #      - name: "Report Success"
 #        if: ${{ steps.cpr.outputs.pull-request-operation == 'closed' }}
