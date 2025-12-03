@@ -15,28 +15,29 @@ object UriFixtures {
     fun normalizeUri(uriString: String): String {
         // Convert backslashes to forward slashes for URI compatibility
         val withForwardSlashes = uriString.replace('\\', '/')
-        
+
         // Try to parse as URI
-        val uri = try {
-            URI.create(withForwardSlashes)
-        } catch (e: Exception) {
-            // If parsing fails, treat as a file path and convert to URI
-            return File(uriString).toURI().toString()
-        }
-        
+        val uri =
+            try {
+                URI.create(withForwardSlashes)
+            } catch (e: Exception) {
+                // If parsing fails, treat as a file path and convert to URI
+                return File(uriString).toURI().toString()
+            }
+
         // Handle file URIs
         if (uri.scheme == "file") {
             // Get the path component
             val path = uri.path ?: uri.schemeSpecificPart
-            
+
             // Normalize the path:
             // - Remove leading slashes
             // - Ensure consistent format
             val cleanPath = path.trimStart('/')
-            
+
             // Check if this is a Windows absolute path (starts with drive letter)
             val isWindowsAbsolute = cleanPath.matches(Regex("^[A-Za-z]:.*"))
-            
+
             // Return normalized URI
             return if (isWindowsAbsolute) {
                 // Windows absolute path: file:///C:/path
@@ -49,12 +50,12 @@ object UriFixtures {
                 "file:///$cleanPath"
             }
         }
-        
+
         // Handle paths without scheme - treat as file paths
         if (uri.scheme == null) {
             return File(uriString).toURI().toString()
         }
-        
+
         // For other schemes, return with forward slashes
         return withForwardSlashes
     }
