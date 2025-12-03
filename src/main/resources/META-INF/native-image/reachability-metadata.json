@@ -5073,13 +5073,31 @@
       "type": "org.junit.internal.AssumptionViolatedException"
     },
     {
+      "type": "org.junit.jupiter.api.DisplayName"
+    },
+    {
       "type": "org.junit.jupiter.engine.JupiterTestEngine"
+    },
+    {
+      "type": "org.junit.platform.engine.CancellationToken"
+    },
+    {
+      "type": "org.junit.platform.launcher.LauncherExecutionRequest"
     },
     {
       "type": "org.junit.platform.launcher.LauncherSession",
       "methods": [
         {
           "name": "getLauncher",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.junit.platform.launcher.TestIdentifier",
+      "methods": [
+        {
+          "name": "getParentIdObject",
           "parameterTypes": []
         }
       ]
