@@ -11,7 +11,7 @@ object UriFixtures {
         return if (uri.scheme == "file") {
             val path = uri.path
             val cleanPath = path.dropWhile { it == '/' }
-            "file:///$cleanPath"
+                normalizeWindowsPath("file:///$cleanPath")
         } else {
             normalizeWindowsPath
         }
