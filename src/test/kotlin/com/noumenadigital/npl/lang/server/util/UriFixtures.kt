@@ -22,8 +22,9 @@ object UriFixtures {
             return uri
         }
 
-        return uri.replace(Regex("/([A-Za-z]):/")) { match ->
-            "${match.groupValues[1]}:\\"
-        }.replace('/', '\\')
+        return uri
+            .replace(Regex("/([A-Za-z]):/")) { match ->
+                "${match.groupValues[1]}:\\"
+            }.replace('/', '\\')
     }
 }
