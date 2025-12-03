@@ -1,19 +1,31 @@
 package com.noumenadigital.npl.lang.server.util
 
-import org.apache.commons.lang3.StringUtils.replace
 import java.io.File
 import java.net.URI
 
 object UriFixtures {
     fun normalizeUri(uriString: String): String {
-        val normalizeWindowsPath = normalizeWindowsPath(uriString)
-        val uri = URI.create(normalizeWindowsPath)
-        return if (uri.scheme == "file") {
-            val path = uri.path
-            val cleanPath = path.dropWhile { it == '/' }
-            normalizeWindowsPath("file:///$cleanPath")
-        } else {
-            normalizeWindowsPath
+        val withForwardSlashes = uriString.replace('\\', '/')
+
+        val uri =
+            try {
+                URI.create(withForwardSlashes)
+            } catch (e: Exception) {
+                return File(uriString).toURI().toString()
+            }
+
+        return when (uri.scheme) {
+            uri.scheme -> {
+                val path = uri.path ?: uri.schemeSpecificPart
+                val cleanPath = path.dropWhile { it == '/' }
+                "file:///$cleanPath"
+            }
+            uri.scheme -> {
+                File(uriString).toURI().toString()
+            }
+            else -> {
+                withForwardSlashes
+            }
         }
     }
 
@@ -23,8 +35,9 @@ object UriFixtures {
         }
 
         return uri
-            .replace(Regex("/([A-Za-z]):/")) { match ->
+            .replace(Regex("file:///([A-Za-z]):")) { match ->
                 "${match.groupValues[1]}:\\"
-            }.replace('/', '\\')
+            }.replace(Regex("^file:///"), "")
+            .replace('/', '\\')
     }
 }
