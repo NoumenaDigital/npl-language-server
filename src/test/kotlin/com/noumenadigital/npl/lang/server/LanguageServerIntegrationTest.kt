@@ -436,6 +436,7 @@ class LanguageServerIntegrationTest : FunSpec() {
                     client.openDocument(uri, invalidCode)
 
                     client.waitForDiagnostics(timeoutSeconds, TimeUnit.SECONDS) shouldBe true
+                    println("mmozhzhe" + normalizedUri)
                     client.hasDiagnosticsForUri(normalizedUri) shouldBe true
 
                     // Clear diagnostics to prepare for the next publication
