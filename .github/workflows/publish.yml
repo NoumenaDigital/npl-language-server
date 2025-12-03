@@ -39,10 +39,9 @@ jobs:
     name: "Determine Release Version"
     runs-on: ubuntu-latest
     outputs:
-      release_tag: ${{ steps.set-version.outputs.version }}
-      release_name: "NPL Language Server release ${{ steps.set-version.outputs.version }}"
-      version: ${{ steps.set-version.outputs.version }}
-      should_release: ${{ steps.validate-release-version.outputs.should_release }}
+      release_tag: ${{ steps.set-version.outputs.release_tag }}
+      release_name: ${{ steps.set-version.outputs.release_name }}
+      should_release: ${{ steps.check-release-flag.outputs.should_release }}
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
@@ -56,20 +55,47 @@ jobs:
           java-version: "24"
           cache: "maven"
 
+      - name: "Check Release Flag"
+        id: check-release-flag
+        run: |
+          # Set environment variable for force release
+          export FORCE_RELEASE="${{ github.event.inputs.force_release }}"
+
+          # Run the script and capture its output
+          OUTPUT=$(.github/scripts/check-release-flag.sh)
+
+          # Extract the should_release value and set as output
+          SHOULD_RELEASE=$(echo "$OUTPUT" | grep "should_release=" | cut -d= -f2)
+          echo "should_release=$SHOULD_RELEASE" >> $GITHUB_OUTPUT
+
+          # Display the full output for debugging
+          echo "$OUTPUT"
+
       - name: "Determine Release Version"
         id: set-version
-        run: echo "version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
-
-      - name: "Validate the release version"
-        id: validate-release-version
+        if: steps.check-release-flag.outputs.should_release == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Simple validation for now, or adapt script from npl-cli if available
-          echo "should_release=true" >> $GITHUB_OUTPUT
+          # Use manual inputs if provided
+          if [ -n "${{ github.event.inputs.release_tag }}" ]; then
+            echo "release_tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
+            echo "release_name=${{ github.event.inputs.release_name || format('NPL Language Server {0}', github.event.inputs.release_tag) }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Run the version determination script
+          source .github/scripts/determine-version.sh
+
+          # Copy the script output to GitHub Actions outputs
+          echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
+          echo "release_name=$release_name" >> $GITHUB_OUTPUT
+          echo "Using release tag: $release_tag"
 
   build-native:
     name: "Build ${{ matrix.os }}-${{ matrix.arch }} Native Binary"
     needs: determine-version
-    if: needs.determine-version.outputs.should_release == 'true' || github.event_name == 'workflow_dispatch'
+    if: needs.determine-version.outputs.should_release == 'true'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -78,29 +104,29 @@ jobs:
           - os: ubuntu
             runner: ubuntu-latest
             arch: x86_64
-            output_name: npl-language-server-linux-x86_64-${{needs.determine-version.outputs.version}}
+            output_name: npl-language-server-linux-x86_64-${{needs.determine-version.outputs.release_tag}}
             static: true
           - os: ubuntu
             runner: linux-arm-64
             arch: aarch64
-            output_name: npl-language-server-linux-aarch64-${{needs.determine-version.outputs.version}}
+            output_name: npl-language-server-linux-aarch64-${{needs.determine-version.outputs.release_tag}}
             static: false
           - os: macos
             runner: macos-15-intel
             arch: x86_64
-            output_name: npl-language-server-macos-x86_64-${{needs.determine-version.outputs.version}}
+            output_name: npl-language-server-macos-x86_64-${{needs.determine-version.outputs.release_tag}}
             sign_and_notarize: true
             static: false
           - os: macos
             runner: macos-latest
             arch: aarch64
-            output_name: npl-language-server-macos-aarch64-${{needs.determine-version.outputs.version}}
+            output_name: npl-language-server-macos-aarch64-${{needs.determine-version.outputs.release_tag}}
             sign_and_notarize: true
             static: false
           - os: windows
             runner: windows-latest
             arch: x86_64
-            output_name: npl-language-server-windows-x86_64-${{needs.determine-version.outputs.version}}.exe
+            output_name: npl-language-server-windows-x86_64-${{needs.determine-version.outputs.release_tag}}.exe
             static: false
 
     steps:
@@ -152,8 +178,8 @@ jobs:
         if: matrix.os != 'windows'
         run: |
           mkdir -p dist
-          if [ -f target/npl-language-server-${{needs.determine-version.outputs.version}} ]; then
-            cp target/npl-language-server-${{needs.determine-version.outputs.version}} dist/${{ matrix.output_name }}
+          if [ -f target/npl-language-server-${{needs.determine-version.outputs.release_tag}} ]; then
+            cp target/npl-language-server-${{needs.determine-version.outputs.release_tag}} dist/${{ matrix.output_name }}
             chmod +x dist/${{ matrix.output_name }}
           fi
 
@@ -162,8 +188,8 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist
-          if (Test-Path target\npl-language-server-${{needs.determine-version.outputs.version}}.exe) {
-            Copy-Item target\npl-language-server-${{needs.determine-version.outputs.version}}.exe -Destination dist\${{ matrix.output_name }}
+          if (Test-Path target\npl-language-server-${{needs.determine-version.outputs.release_tag}}.exe) {
+            Copy-Item target\npl-language-server-${{needs.determine-version.outputs.release_tag}}.exe -Destination dist\${{ matrix.output_name }}
           }
 
       - name: "Sign and Notarize macOS binary"
@@ -207,7 +233,7 @@ jobs:
   create-release:
     name: "Create GitHub Release"
     needs: [determine-version, build-native]
-    if: needs.determine-version.outputs.should_release == 'true' || github.event_name == 'workflow_dispatch'
+    if: needs.determine-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: "Download individual artifacts"
