@@ -246,9 +246,9 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ needs.determine-version.outputs.version }}
+          tag: ${{ needs.determine-version.outputs.release_tag }}
           name: ${{ needs.determine-version.outputs.release_name }}
-          body: "NPL Language Server release ${{ needs.determine-version.outputs.version }}"
+          body: "NPL Language Server release ${{ needs.determine-version.outputs.release_tag }}"
           commit: ${{ github.sha }}
           draft: ${{ github.event.inputs.draft || false }}
           prerelease: ${{ github.event.inputs.prerelease || false }}
