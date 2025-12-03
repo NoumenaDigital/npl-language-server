@@ -27,27 +27,32 @@ object UriFixtures {
 
         // Handle file URIs
         if (uri.scheme == "file") {
-            // Get the path component
-            val path = uri.path ?: uri.schemeSpecificPart
+            // Get the path component - use schemeSpecificPart for file:/D:/ format
+            // and path for file:///D:/ format
+            val rawPath = uri.path ?: uri.schemeSpecificPart
+            
+            // For file:/D:/path format, the path might be null and schemeSpecificPart is /D:/path
+            // For file:///D:/path format, the path is /D:/path
+            // We need to handle both cases
+            val pathToNormalize = when {
+                // If path is null or empty, use schemeSpecificPart
+                rawPath.isNullOrEmpty() -> uri.schemeSpecificPart
+                // If path doesn't start with / but schemeSpecificPart does, use schemeSpecificPart
+                !rawPath.startsWith("/") && uri.schemeSpecificPart.startsWith("/") -> uri.schemeSpecificPart
+                else -> rawPath
+            }
 
-            // Normalize the path:
-            // - Remove leading slashes
-            // - Ensure consistent format
-            val cleanPath = path.trimStart('/')
+            // Normalize the path: remove leading slashes
+            val cleanPath = pathToNormalize.trimStart('/')
 
             // Check if this is a Windows absolute path (starts with drive letter)
             val isWindowsAbsolute = cleanPath.matches(Regex("^[A-Za-z]:.*"))
 
-            // Return normalized URI
-            return if (isWindowsAbsolute) {
-                // Windows absolute path: file:///C:/path
+            // Return normalized URI - always use file:/// format for consistency
+            return if (isWindowsAbsolute || cleanPath.isNotEmpty()) {
                 "file:///$cleanPath"
-            } else if (cleanPath.isEmpty()) {
-                // Empty path
-                "file:///"
             } else {
-                // Relative or Unix absolute path: file:///path
-                "file:///$cleanPath"
+                "file:///"
             }
         }
 
