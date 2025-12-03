@@ -5,13 +5,25 @@ import java.net.URI
 
 object UriFixtures {
     fun normalizeUri(uriString: String): String {
-        val uri = URI.create(uriString)
+        // Convert backslashes to forward slashes for URI compatibility
+        val withForwardSlashes = uriString.replace('\\', '/')
+        
+        val uri = try {
+            URI.create(withForwardSlashes)
+        } catch (e: Exception) {
+            // If URI creation fails, treat as a file path
+            return File(uriString).toURI().toString()
+        }
+        
         return if (uri.scheme == "file") {
             val path = uri.path
             val cleanPath = path.dropWhile { it == '/' }
-            normalizeWindowsPath("file:///$cleanPath")
+            "file:///$cleanPath"
+        } else if (uri.scheme == null) {
+            // No scheme means it's a file path, convert it
+            File(uriString).toURI().toString()
         } else {
-            normalizeWindowsPath(uriString)
+            withForwardSlashes
         }
     }
 
