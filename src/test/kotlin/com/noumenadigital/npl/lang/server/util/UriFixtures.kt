@@ -4,13 +4,23 @@ import java.net.URI
 
 object UriFixtures {
     fun normalizeUri(uriString: String): String {
-        val uri = URI.create(uriString)
-        return if (uri.scheme == "file") {
-            val path = uri.path
+        // Convert backslashes to forward slashes
+        val normalized = uriString.replace('\\', '/')
+        
+        val uri = URI.create(normalized)
+        if (uri.scheme == "file") {
+            // Get the full URI string and find /test
+            val testIndex = normalized.indexOf("/test")
+            if (testIndex >= 0) {
+                // Remove everything before /test and rebuild as file:///test/...
+                return "file://" + normalized.substring(testIndex)
+            }
+            
+            // Fallback: use path component
+            val path = uri.path ?: uri.schemeSpecificPart
             val cleanPath = path.dropWhile { it == '/' }
-            "file:///$cleanPath".replaceAll(".+/test", "/");
-        } else {
-            uriString.replaceAll(".+/test", "/");
+            return "file:///$cleanPath"
         }
+        return normalized
     }
 }
