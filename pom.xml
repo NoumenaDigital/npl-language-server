@@ -139,7 +139,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
-                    <argLine>-XX:+EnableDynamicAgentLoading -Dkotest.framework.classpath.scanning.autoscan.disable=true</argLine>
+                    <argLine>-XX:+EnableDynamicAgentLoading -Dkotest.framework.classpath.scanning.autoscan.disable=true -Dnet.bytebuddy.experimental=true</argLine>
                     <includes>
                         <include>**/*Test.*</include>
                     </includes>
@@ -246,7 +246,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>-XX:+EnableDynamicAgentLoading -Dkotest.framework.classpath.scanning.autoscan.disable=true -agentlib:native-image-agent=config-merge-dir=${project.basedir}/src/main/resources/META-INF/native-image</argLine>
+                            <argLine>-XX:+EnableDynamicAgentLoading -Dkotest.framework.classpath.scanning.autoscan.disable=true -Dnet.bytebuddy.experimental=true -agentlib:native-image-agent=config-merge-dir=${project.basedir}/src/main/resources/META-INF/native-image</argLine>
                             <includes>
                                 <include>**/*Test.*</include>
                             </includes>
