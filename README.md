@@ -129,33 +129,31 @@ binary that users can run without installing a JRE or any other dependencies.
 The language server uses GraalVM's native-image for creating standalone executables. To generate the necessary
 configuration files:
 
-1. Run the configuration generator script:
-   - Manual generation:
-         ```bash
-         ./generate-native-configs.sh
-         ```
+1.  Run the configuration generator script:
 
-         This script will:
+    - Manual generation: `bash     ./generate-native-configs.sh     `
 
-         - Build a fat jar with all dependencies
-         - Run the language server with the native-image-agent
-         - Generate configuration files in `src/main/resources/META-INF/native-image`
-   
-   - Maven generation
-     ```bash
-      mvn clean verify -Pconfig-gen
+          This script will:
+
+          - Build a fat jar with all dependencies
+          - Run the language server with the native-image-agent
+          - Generate configuration files in `src/main/resources/META-INF/native-image`
+
+    - Maven generation
+      ```bash
+       mvn clean verify -Pconfig-gen
       ```
 
-2. While the server is running, interact with it through your IDE or client to exercise different code paths. The agent
-   will automatically collect metadata about classes, methods, and resources used at runtime.
+2.  While the server is running, interact with it through your IDE or client to exercise different code paths. The agent
+    will automatically collect metadata about classes, methods, and resources used at runtime.
 
-3. Once you've exercised the desired functionality, stop the server (Ctrl+C). The generated configurations will be saved
-   in the `src/main/resources/META-INF/native-image` directory.
+3.  Once you've exercised the desired functionality, stop the server (Ctrl+C). The generated configurations will be
+    saved in the `src/main/resources/META-INF/native-image` directory.
 
-4. After generating configurations, you can build the native image using:
-   ```bash
-   mvn -Pnative package
-   ```
+4.  After generating configurations, you can build the native image using:
+    ```bash
+    mvn -Pnative package
+    ```
 
 If you encounter issues with the native image, you may need to manually modify the generated configuration files. Refer
 to the
