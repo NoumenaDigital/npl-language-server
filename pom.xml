@@ -190,7 +190,6 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <imageName>npl-language-server-${project.version}</imageName>
                             <buildArgs>
                                 <buildArg>--exact-reachability-metadata</buildArg>
                                 <buildArg>--strict-image-heap</buildArg>
