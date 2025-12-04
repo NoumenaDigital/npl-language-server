@@ -11,7 +11,7 @@ The language server can operate in two modes:
 
 ## Setup
 
-You'll need Maven and Java 21 (graalvm if you want to build binaries) or later installed on your system.
+You'll need Maven and Java 24 (graalvm if you want to build binaries) or later installed on your system.
 
 ## Build project and run tests
 
@@ -112,7 +112,7 @@ binary that users can run without installing a JRE or any other dependencies.
 
 ### Building the Native Image
 
-1. Install GraalVM JDK 21 or later
+1. Install GraalVM JDK 24 or later
 2. Build the native executable:
    ```bash
    mvn -Pnative package
