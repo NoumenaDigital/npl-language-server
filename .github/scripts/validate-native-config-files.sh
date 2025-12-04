@@ -2,7 +2,7 @@
 set -e
 
 echo "Generating native configuration with Maven..."
-./generate-native-configs.sh
+mvn clean verify -Pconfig-gen
 
 echo "Validating native-image configs..."
 if [[ -n $(git diff --ignore-all-space -- src/main/resources/META-INF/native-image/) ]]; then

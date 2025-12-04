@@ -130,16 +130,21 @@ The language server uses GraalVM's native-image for creating standalone executab
 configuration files:
 
 1. Run the configuration generator script:
+   - Manual generation:
+         ```bash
+         ./generate-native-configs.sh
+         ```
 
-   ```bash
-   ./generate-native-configs.sh
-   ```
+         This script will:
 
-   This script will:
-
-   - Build a fat jar with all dependencies
-   - Run the language server with the native-image-agent
-   - Generate configuration files in `src/main/resources/META-INF/native-image`
+         - Build a fat jar with all dependencies
+         - Run the language server with the native-image-agent
+         - Generate configuration files in `src/main/resources/META-INF/native-image`
+   
+   - Maven generation
+     ```bash
+      mvn clean verify -Pconfig-gen
+      ```
 
 2. While the server is running, interact with it through your IDE or client to exercise different code paths. The agent
    will automatically collect metadata about classes, methods, and resources used at runtime.
