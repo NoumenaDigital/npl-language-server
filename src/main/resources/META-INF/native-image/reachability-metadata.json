@@ -5908,11 +5908,7 @@
     },
     {
       "module": "java.base",
-      "glob": "sun/launcher/resources/launcher_en.properties"
-    },
-    {
-      "module": "java.base",
-      "glob": "sun/launcher/resources/launcher_en_US.properties"
+      "glob": "sun/launcher/resources/launcher_*.properties"
     },
     {
       "module": "java.base",
