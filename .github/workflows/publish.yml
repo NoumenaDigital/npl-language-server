@@ -128,7 +128,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: "graalvm"
-          java-version: "21"
+          java-version: "24"
           cache: "maven"
 
       - name: "Install musl toolchain and build static zlib"

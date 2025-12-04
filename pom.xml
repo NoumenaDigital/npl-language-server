@@ -31,7 +31,7 @@
         <platform.version>2025.2.1</platform.version>
         <kotlin.version>2.1.10</kotlin.version>
         <kotest.version>5.9.1</kotest.version>
-        <java.version>17</java.version>
+        <java.version>24</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -82,10 +82,22 @@
         <dependency>
             <groupId>io.mockk</groupId>
             <artifactId>mockk-jvm</artifactId>
-            <version>1.13.17</version>
+            <version>1.14.6</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>5.11.3</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
 
     <build>
         <sourceDirectory>src/main/kotlin</sourceDirectory>
@@ -130,14 +142,14 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.2</version>
+                <version>3.5.4</version>
                 <configuration>
                     <argLine>-XX:+EnableDynamicAgentLoading -Dkotest.framework.classpath.scanning.autoscan.disable=true</argLine>
                     <includes>
@@ -179,11 +191,8 @@
                         </executions>
                         <configuration>
                             <buildArgs>
+                                <buildArg>--exact-reachability-metadata</buildArg>
                                 <buildArg>--strict-image-heap</buildArg>
-                                <buildArg>--enable-sbom</buildArg>
-                                <buildArg>
-                                    -H:ReflectionConfigurationFiles=${project.basedir}/src/main/resources/META-INF/native-image/additional-reflect-config.json
-                                </buildArg>
                             </buildArgs>
                             <mainClass>com.noumenadigital.npl.lang.server.MainKt</mainClass>
                         </configuration>
@@ -218,7 +227,7 @@
             </build>
         </profile>
         <profile>
-            <id>buildFatjar</id>
+            <id>config-gen</id>
             <build>
                 <plugins>
                     <plugin>
@@ -243,6 +252,16 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>-XX:+EnableDynamicAgentLoading -Dkotest.framework.classpath.scanning.autoscan.disable=true -agentlib:native-image-agent=config-merge-dir=${project.basedir}/src/main/resources/META-INF/native-image</argLine>
+                            <includes>
+                                <include>**/*Test.*</include>
+                            </includes>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

@@ -99,7 +99,7 @@ class TestLanguageClient(
 
     fun hasDiagnosticsForUri(normalizedUri: String): Boolean =
         synchronized(allDiagnostics) {
-            return allDiagnostics.any { normalizeUri(it.uri) == normalizeUri(normalizedUri) }
+            allDiagnostics.any { normalizeUri(it.uri) == normalizeUri(normalizedUri) }
         }
 
     fun verifyDiagnosticsContain(

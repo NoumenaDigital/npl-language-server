@@ -11,7 +11,7 @@ The language server can operate in two modes:
 
 ## Setup
 
-You'll need Maven and Java 21 (graalvm if you want to build binaries) or later installed on your system.
+You'll need Maven and Java 24 (graalvm if you want to build binaries) or later installed on your system.
 
 ## Build project and run tests
 
@@ -112,7 +112,7 @@ binary that users can run without installing a JRE or any other dependencies.
 
 ### Building the Native Image
 
-1. Install GraalVM JDK 21 or later
+1. Install GraalVM JDK 24 or later
 2. Build the native executable:
    ```bash
    mvn -Pnative package
@@ -129,28 +129,31 @@ binary that users can run without installing a JRE or any other dependencies.
 The language server uses GraalVM's native-image for creating standalone executables. To generate the necessary
 configuration files:
 
-1. Run the configuration generator script:
+1.  Run the configuration generator script:
 
-   ```bash
-   ./generate-native-configs.sh
-   ```
+    - Manual generation: `bash     ./generate-native-configs.sh     `
 
-   This script will:
+          This script will:
 
-   - Build a fat jar with all dependencies
-   - Run the language server with the native-image-agent
-   - Generate configuration files in `src/main/resources/META-INF/native-image`
+          - Build a fat jar with all dependencies
+          - Run the language server with the native-image-agent
+          - Generate configuration files in `src/main/resources/META-INF/native-image`
 
-2. While the server is running, interact with it through your IDE or client to exercise different code paths. The agent
-   will automatically collect metadata about classes, methods, and resources used at runtime.
+    - Maven generation
+      ```bash
+       mvn clean verify -Pconfig-gen
+      ```
 
-3. Once you've exercised the desired functionality, stop the server (Ctrl+C). The generated configurations will be saved
-   in the `src/main/resources/META-INF/native-image` directory.
+2.  While the server is running, interact with it through your IDE or client to exercise different code paths. The agent
+    will automatically collect metadata about classes, methods, and resources used at runtime.
 
-4. After generating configurations, you can build the native image using:
-   ```bash
-   mvn -Pnative package
-   ```
+3.  Once you've exercised the desired functionality, stop the server (Ctrl+C). The generated configurations will be
+    saved in the `src/main/resources/META-INF/native-image` directory.
+
+4.  After generating configurations, you can build the native image using:
+    ```bash
+    mvn -Pnative package
+    ```
 
 If you encounter issues with the native image, you may need to manually modify the generated configuration files. Refer
 to the

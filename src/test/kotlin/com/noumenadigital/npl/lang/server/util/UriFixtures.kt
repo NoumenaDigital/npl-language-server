@@ -4,13 +4,21 @@ import java.net.URI
 
 object UriFixtures {
     fun normalizeUri(uriString: String): String {
-        val uri = URI.create(uriString)
-        return if (uri.scheme == "file") {
-            val path = uri.path
+        val normalized = uriString.replace('\\', '/')
+
+        val uri = URI.create(normalized)
+        if (uri.scheme == "file") {
+            val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+            if (isWindows) {
+                val testIndex = normalized.indexOf("/test")
+                if (testIndex >= 0) {
+                    return "file://" + normalized.substring(testIndex)
+                }
+            }
+            val path = uri.path ?: uri.schemeSpecificPart
             val cleanPath = path.dropWhile { it == '/' }
-            "file:///$cleanPath"
-        } else {
-            uriString
+            return "file:///$cleanPath"
         }
+        return normalized
     }
 }

@@ -1,0 +1,84 @@
+name: "Verify and test"
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-config:
+    name: "Validate native config diff (${{ matrix.os }}-${{ matrix.arch }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu
+            runner: ubuntu-latest
+            arch: x86_64
+          - os: ubuntu
+            runner: linux-arm-64
+            arch: aarch64
+          - os: macos
+            runner: macos-15-intel
+            arch: x86_64
+          - os: macos
+            runner: macos-latest
+            arch: aarch64
+          - os: windows
+            runner: windows-latest
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Set up Maven"
+        uses: actions/setup-java@v4
+        with:
+          distribution: "graalvm"
+          java-version: "24"
+          cache: "maven"
+
+      - name: "Validate native config diff"
+        run: .github/scripts/validate-native-config-files.sh
+
+  build-and-test:
+    name: "Build and test native binary (${{ matrix.os }}-${{ matrix.arch }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu
+            runner: ubuntu-latest
+            arch: x86_64
+          - os: ubuntu
+            runner: linux-arm-64
+            arch: aarch64
+          - os: macos
+            runner: macos-15-intel
+            arch: x86_64
+          - os: macos
+            runner: macos-latest
+            arch: aarch64
+          - os: windows
+            runner: windows-latest
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Set up Maven"
+        uses: actions/setup-java@v4
+        with:
+          distribution: "graalvm"
+          java-version: "24"
+          cache: "maven"
+
+      - name: "Build npl-language-server native binary and test it"
+        run: mvn -Pnative clean verify
