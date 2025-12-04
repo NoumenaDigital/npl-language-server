@@ -5720,6 +5720,14 @@
           "net.bytebuddy.utility.JavaConstant$Simple$Dispatcher$OfMethodTypeDesc"
         ]
       }
+    },
+    {
+      "type": {
+        "proxy": [
+          "org.eclipse.lsp4j.services.LanguageClient",
+          "org.eclipse.lsp4j.jsonrpc.Endpoint"
+        ]
+      }
     }
   ],
   "resources": [
@@ -5897,6 +5905,14 @@
     {
       "module": "java.base",
       "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
+    },
+    {
+      "module": "java.base",
+      "glob": "sun/launcher/resources/launcher_en.properties"
+    },
+    {
+      "module": "java.base",
+      "glob": "sun/launcher/resources/launcher_en_US.properties"
     },
     {
       "module": "java.base",
