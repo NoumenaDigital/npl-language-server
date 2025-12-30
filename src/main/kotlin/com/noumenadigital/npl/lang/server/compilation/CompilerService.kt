@@ -37,7 +37,10 @@ interface CompilerService {
 
     fun removeSource(uri: String)
 
-    fun preloadSources(nplRootUris: List<String>, nplContribLibs: List<String> = emptyList())
+    fun preloadSources(
+        nplRootUris: List<String>,
+        nplContribLibs: List<String> = emptyList(),
+    )
 }
 
 class DefaultCompilerService(
@@ -135,7 +138,10 @@ class DefaultCompilerService(
         clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, emptyList()))
     }
 
-    override fun preloadSources(nplRootUris: List<String>, nplContribLibs: List<String>) {
+    override fun preloadSources(
+        nplRootUris: List<String>,
+        nplContribLibs: List<String>,
+    ) {
         // When workspace changes, we need to clear diagnostics for files that are no longer in workspace
         val oldSources = sources.keys.toSet()
         sources.clear()
@@ -182,10 +188,11 @@ class DefaultCompilerService(
                 Files.walk(rootPath).forEach { path ->
                     if (Files.isDirectory(path)) return@forEach
 
-                    val entryName = rootPath
-                        .relativize(path)
-                        .toString()
-                        .replace(File.separatorChar, '/')
+                    val entryName =
+                        rootPath
+                            .relativize(path)
+                            .toString()
+                            .replace(File.separatorChar, '/')
 
                     zos.putNextEntry(ZipEntry(entryName))
                     Files.copy(path, zos)
@@ -197,7 +204,6 @@ class DefaultCompilerService(
         val archiveUri = "zip:${zipPath.toUri()}!/"
         return VFS.getManager().resolveFile(archiveUri)
     }
-
 
     private fun isInWorkspace(path: Path): Boolean =
         if (workspacePaths.isEmpty()) {

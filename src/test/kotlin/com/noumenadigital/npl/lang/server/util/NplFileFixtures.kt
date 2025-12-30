@@ -34,7 +34,7 @@ object NplFileFixtures {
     fun moveZipArchive(
         sourceFile: Path,
         targetDirectory: Path,
-        newFileName: String? = null
+        newFileName: String? = null,
     ): Path {
         Files.createDirectories(targetDirectory)
         val destination = targetDirectory.resolve(newFileName ?: sourceFile.fileName.toString())

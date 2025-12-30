@@ -18,7 +18,6 @@ import org.eclipse.lsp4j.DiagnosticSeverity
 import org.intellij.lang.annotations.Language
 import java.io.File
 import java.nio.file.Files
-import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 class CompilerServiceTest :
@@ -82,7 +81,7 @@ class CompilerServiceTest :
                                     code = 89,
                                     message =
                                         "The compiler cannot (currently) automatically resolve the type " +
-                                                "for '/test/doIt'. Please add explicit types.",
+                                            "for '/test/doIt'. Please add explicit types.",
                                     severity = DiagnosticSeverity.Error,
                                 ),
                             ),
@@ -355,7 +354,7 @@ class CompilerServiceTest :
                                 listOf(
                                     workspaceDir1.toUri().toString(),
                                     workspaceDir2.toUri().toString(),
-                                )
+                                ),
                             )
 
                             // Get loaded sources
@@ -391,7 +390,7 @@ class CompilerServiceTest :
                             listOf(
                                 workspaceDir.toUri().toString(),
                                 testDir.toUri().toString(),
-                            )
+                            ),
                         )
 
                         // Get loaded sources

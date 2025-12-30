@@ -89,8 +89,8 @@ class LanguageServerTest :
                     compilerMock.preloadSources(
                         match<List<String>> { uris ->
                             uris.size == 2 &&
-                                    uris.contains("file:///effective/workspace1") &&
-                                    uris.contains("file:///effective/workspace2")
+                                uris.contains("file:///effective/workspace1") &&
+                                uris.contains("file:///effective/workspace2")
                         },
                         nplContribLibs,
                     )
@@ -170,9 +170,9 @@ class LanguageServerTest :
                     compilerMock.preloadSources(
                         match<List<String>> { uris ->
                             uris.size == 2 &&
-                                    uris.contains("file:///effective/workspace1") &&
-                                    uris.contains("file:///effective/workspace2")
-                        }
+                                uris.contains("file:///effective/workspace1") &&
+                                uris.contains("file:///effective/workspace2")
+                        },
                     )
                 }
             }

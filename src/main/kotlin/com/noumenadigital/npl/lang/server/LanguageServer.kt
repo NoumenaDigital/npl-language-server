@@ -97,7 +97,10 @@ class LanguageServer(
         }
     }
 
-    private fun preloadSources(nplRootUris: List<String>, nplContribLibs: List<String> = emptyList()) {
+    private fun preloadSources(
+        nplRootUris: List<String>,
+        nplContribLibs: List<String> = emptyList(),
+    ) {
         compilerService.preloadSources(nplRootUris, nplContribLibs)
     }
 
