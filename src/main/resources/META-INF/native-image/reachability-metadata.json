@@ -176,6 +176,9 @@
       ]
     },
     {
+      "type": "com.jcraft.jsch.JSch"
+    },
+    {
       "type": "com.noumenadigital.npl.lang.server.EffectiveWorkspaceFolder",
       "allDeclaredFields": true,
       "unsafeAllocated": true,
@@ -325,6 +328,9 @@
       ]
     },
     {
+      "type": "com.noumenadigital.npl.lang.server.compilation.CompilerService$DefaultImpls"
+    },
+    {
       "type": "com.noumenadigital.npl.lang.server.compilation.CompilerServiceTest",
       "methods": [
         {
@@ -397,6 +403,15 @@
     },
     {
       "type": "com.sun.management.internal.OperatingSystemImpl"
+    },
+    {
+      "type": "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "com.sun.tools.attach.VirtualMachine"
@@ -1626,6 +1641,9 @@
       ]
     },
     {
+      "type": "javax.crypto.Cipher"
+    },
+    {
       "type": "javax.management.MBeanOperationInfo",
       "methods": [
         {
@@ -2071,6 +2089,9 @@
     {
       "type": "kotlin.Unit",
       "allDeclaredFields": true
+    },
+    {
+      "type": "kotlin.collections.EmptyList"
     },
     {
       "type": "kotlin.collections.List"
@@ -3210,6 +3231,115 @@
     {
       "type": "nonapi.io.github.classgraph.scanspec.ScanSpec",
       "allDeclaredFields": true
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream"
+    },
+    {
+      "type": "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream"
+    },
+    {
+      "type": "org.apache.commons.httpclient.HttpClient"
+    },
+    {
+      "type": "org.apache.commons.net.ftp.FTPFile"
+    },
+    {
+      "type": "org.apache.commons.vfs2.impl.DefaultFileSystemManager"
+    },
+    {
+      "type": "org.apache.commons.vfs2.impl.StandardFileSystemManager",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "init",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.vfs2.provider.gzip.GzipFileProvider",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.vfs2.provider.jar.JarFileProvider",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.vfs2.provider.local.DefaultLocalFileProvider",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.vfs2.provider.ram.RamFileProvider",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.vfs2.provider.res.ResourceFileProvider",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.vfs2.provider.temp.TemporaryFileProvider",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.vfs2.provider.url.UrlFileProvider",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.vfs2.provider.zip.ZipFileProvider",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.hadoop.fs.FileSystem"
+    },
+    {
+      "type": "org.apache.hc.client5.http.classic.HttpClient"
+    },
+    {
+      "type": "org.apache.http.client.HttpClient"
     },
     {
       "type": "org.apache.logging.log4j.spi.ExtendedLogger"
@@ -5747,6 +5877,9 @@
       "glob": "META-INF/services/java.time.zone.ZoneRulesProvider"
     },
     {
+      "glob": "META-INF/services/javax.xml.parsers.DocumentBuilderFactory"
+    },
+    {
       "glob": "META-INF/services/kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition"
     },
     {
@@ -5772,6 +5905,9 @@
     },
     {
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
+    },
+    {
+      "glob": "META-INF/vfs-providers.xml"
     },
     {
       "glob": "io/mockk/proxy/jvm/advice/jvm/JvmMockKProxyAdvice.class"
@@ -5903,6 +6039,18 @@
       "glob": "npl-contrib-native/stdlib/v1/text/text.npl"
     },
     {
+      "glob": "org/apache/commons/vfs2/Resources.properties"
+    },
+    {
+      "glob": "org/apache/commons/vfs2/Resources_en.properties"
+    },
+    {
+      "glob": "org/apache/commons/vfs2/Resources_en_US.properties"
+    },
+    {
+      "glob": "org/apache/commons/vfs2/impl/providers.xml"
+    },
+    {
       "module": "java.base",
       "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
     },
@@ -5913,6 +6061,10 @@
     {
       "module": "java.base",
       "glob": "sun/net/www/content-types.properties"
+    },
+    {
+      "module": "java.xml",
+      "glob": "jdk/xml/internal/jdkcatalog/JDKCatalog.xml"
     }
   ],
   "bundles": [],

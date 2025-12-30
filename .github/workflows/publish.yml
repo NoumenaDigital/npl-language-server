@@ -105,7 +105,7 @@ jobs:
             output_name: language-server-linux-aarch64
             static: false
           - os: macos
-            runner: macos-13
+            runner: macos-15
             arch: x86_64
             output_name: language-server-macos-x86_64
             static: false
