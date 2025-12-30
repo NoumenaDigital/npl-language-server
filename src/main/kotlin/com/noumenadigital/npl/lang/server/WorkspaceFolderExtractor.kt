@@ -1,12 +1,12 @@
 package com.noumenadigital.npl.lang.server
 
-import com.google.gson.Gson
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger { }
 
 data class InitializationOptions(
     val effectiveWorkspaceFolders: List<EffectiveWorkspaceFolder>? = emptyList(),
+    val nplContribLibraries: List<String>? = emptyList(),
     val nplServerDebouncingTimeMs: Int = 300,
 )
 
@@ -16,8 +16,6 @@ data class EffectiveWorkspaceFolder(
 )
 
 object WorkspaceFolderExtractor {
-    private val gson = Gson()
-
     fun extractWorkspaceFolderUris(
         effectiveWorkspaceFolders: List<EffectiveWorkspaceFolder>?,
         standardWorkspaceFolderUris: List<String>?,

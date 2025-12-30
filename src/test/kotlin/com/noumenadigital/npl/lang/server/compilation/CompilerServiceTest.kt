@@ -3,7 +3,9 @@ package com.noumenadigital.npl.lang.server.compilation
 import com.noumenadigital.npl.lang.server.LanguageClientProvider
 import com.noumenadigital.npl.lang.server.util.DiagnosticTestUtils
 import com.noumenadigital.npl.lang.server.util.DiagnosticTestUtils.ExpectedDiagnostic
+import com.noumenadigital.npl.lang.server.util.NplFileFixtures.codeValidOnlyWithNplContribLib
 import com.noumenadigital.npl.lang.server.util.NplFileFixtures.createNplFile
+import com.noumenadigital.npl.lang.server.util.NplFileFixtures.moveZipArchive
 import com.noumenadigital.npl.lang.server.util.NplFileFixtures.simpleValidCode
 import com.noumenadigital.npl.lang.server.util.NplFileFixtures.validCodeWithError
 import com.noumenadigital.npl.lang.server.util.NplFileFixtures.withNplTestFile
@@ -14,7 +16,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.intellij.lang.annotations.Language
+import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 class CompilerServiceTest :
@@ -78,7 +82,7 @@ class CompilerServiceTest :
                                     code = 89,
                                     message =
                                         "The compiler cannot (currently) automatically resolve the type " +
-                                            "for '/test/doIt'. Please add explicit types.",
+                                                "for '/test/doIt'. Please add explicit types.",
                                     severity = DiagnosticSeverity.Error,
                                 ),
                             ),
@@ -234,6 +238,27 @@ class CompilerServiceTest :
                 }
             }
 
+            test("Files inside workspace should be compiled with npl contrib libs") {
+                withTempDirectory("workspace-test") { workspaceDir ->
+                    val testClient = TestLanguageClient(expectedDiagnosticsCount = 1)
+                    val clientProvider = LanguageClientProvider().apply { client = testClient }
+                    val service = DefaultCompilerService(clientProvider)
+
+                    val workspaceUri = workspaceDir.toUri().toString()
+                    service.preloadSources(listOf(workspaceUri), nplContribLibs = listOf("npl-contrib-test.zip"))
+
+                    val fileUri = createNplFile(workspaceDir, "Valid.npl", codeValidOnlyWithNplContribLib()).toUri().toString()
+                    val nplContribLibPath = File("src/test/resources/npl-contrib-test.zip").toPath()
+                    moveZipArchive(nplContribLibPath, workspaceDir)
+
+                    testClient.expectDiagnostics()
+                    service.updateSource(fileUri, validCodeWithError())
+
+                    testClient.waitForDiagnostics(5, TimeUnit.SECONDS) shouldBe true
+                    testClient.diagnostics.flatMap { it.diagnostics }.isNotEmpty() shouldBe true
+                }
+            }
+
             test("Files outside workspace should be ignored") {
                 withTempDirectory("workspace-test") { workspaceDir ->
                     withTempDirectory("outside-dir") { outsideDir ->
@@ -330,7 +355,7 @@ class CompilerServiceTest :
                                 listOf(
                                     workspaceDir1.toUri().toString(),
                                     workspaceDir2.toUri().toString(),
-                                ),
+                                )
                             )
 
                             // Get loaded sources
@@ -366,7 +391,7 @@ class CompilerServiceTest :
                             listOf(
                                 workspaceDir.toUri().toString(),
                                 testDir.toUri().toString(),
-                            ),
+                            )
                         )
 
                         // Get loaded sources
