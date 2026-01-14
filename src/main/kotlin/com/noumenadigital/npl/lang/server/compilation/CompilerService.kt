@@ -1,5 +1,6 @@
 package com.noumenadigital.npl.lang.server.compilation
 
+import com.noumenadigital.npl.contrib.DefaultNplContribLoader
 import com.noumenadigital.npl.contrib.NplContribConfiguration
 import com.noumenadigital.npl.lang.CompileException
 import com.noumenadigital.npl.lang.CompileFailure
@@ -50,6 +51,7 @@ class DefaultCompilerService(
     private val modifiedSources = mutableSetOf<String>()
     private var lastCompileResult: CompileResult? = null
     private var workspacePaths: List<Path> = emptyList()
+    private var contribLibSources: List<Source> = emptyList()
     private var nplContribConfiguration: NplContribConfiguration = NplContribConfiguration()
 
     private fun compileIfNeeded() {
@@ -63,7 +65,7 @@ class DefaultCompilerService(
             // Instead, errors should be part of the CompileResult and we should avoid try-catch for expected errors.
             val compileResult =
                 Loader(CompilerConfiguration(tag = null, quirksMode = true, nplContribConfiguration = nplContribConfiguration))
-                    .loadPackages(sources = sourceList)
+                    .loadPackages(sources = sourceList + contribLibSources)
             lastCompileResult = compileResult
             modifiedSources.clear()
             publishDiagnostics(sourceList, compileResult)
@@ -150,7 +152,7 @@ class DefaultCompilerService(
         workspacePaths = nplRootUris.map { createPathFromUri(it) }
         if (nplContribLibs.isNotEmpty()) {
             val archive = zipWorkspaceSources(nplRootUris)
-            nplContribConfiguration = NplContribConfiguration(nplContribPaths = nplContribLibs, archive = archive)
+            contribLibSources = DefaultNplContribLoader.extractNplContribLibSources(nplContribLibs, archive)
         }
 
         workspacePaths.forEach { workspacePath ->
