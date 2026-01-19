@@ -5901,6 +5901,206 @@
       }
     }
   ],
+  "resources": [
+    {
+      "glob": ""
+    },
+    {
+      "glob": "META-INF/services/ch.qos.logback.classic.spi.Configurator"
+    },
+    {
+      "glob": "META-INF/services/com.noumenadigital.npl.contrib.NativeImplWithoutRuntimePlugin"
+    },
+    {
+      "glob": "META-INF/services/java.lang.System$LoggerFinder"
+    },
+    {
+      "glob": "META-INF/services/java.time.zone.ZoneRulesProvider"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.parsers.DocumentBuilderFactory"
+    },
+    {
+      "glob": "META-INF/services/kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition"
+    },
+    {
+      "glob": "META-INF/services/kotlin.reflect.jvm.internal.impl.util.ModuleVisibilityHelper"
+    },
+    {
+      "glob": "META-INF/services/org.apache.maven.surefire.spi.MasterProcessChannelProcessorFactory"
+    },
+    {
+      "glob": "META-INF/services/org.junit.platform.engine.TestEngine"
+    },
+    {
+      "glob": "META-INF/services/org.junit.platform.launcher.LauncherDiscoveryListener"
+    },
+    {
+      "glob": "META-INF/services/org.junit.platform.launcher.LauncherSessionListener"
+    },
+    {
+      "glob": "META-INF/services/org.junit.platform.launcher.PostDiscoveryFilter"
+    },
+    {
+      "glob": "META-INF/services/org.junit.platform.launcher.TestExecutionListener"
+    },
+    {
+      "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
+    },
+    {
+      "glob": "META-INF/vfs-providers.xml"
+    },
+    {
+      "glob": "io/mockk/proxy/jvm/advice/jvm/JvmMockKProxyAdvice.class"
+    },
+    {
+      "glob": "io/mockk/proxy/jvm/dispatcher/JvmMockKDispatcher.class"
+    },
+    {
+      "glob": "io/mockk/proxy/jvm/dispatcher/JvmMockKDispatcher.clazz"
+    },
+    {
+      "glob": "io/mockk/proxy/jvm/dispatcher/JvmMockKWeakMap$StrongKey.class"
+    },
+    {
+      "glob": "io/mockk/proxy/jvm/dispatcher/JvmMockKWeakMap$StrongKey.clazz"
+    },
+    {
+      "glob": "io/mockk/proxy/jvm/dispatcher/JvmMockKWeakMap$WeakKey.class"
+    },
+    {
+      "glob": "io/mockk/proxy/jvm/dispatcher/JvmMockKWeakMap$WeakKey.clazz"
+    },
+    {
+      "glob": "io/mockk/proxy/jvm/dispatcher/JvmMockKWeakMap.class"
+    },
+    {
+      "glob": "io/mockk/proxy/jvm/dispatcher/JvmMockKWeakMap.clazz"
+    },
+    {
+      "glob": "io/mockk/settings.properties"
+    },
+    {
+      "glob": "junit-platform.properties"
+    },
+    {
+      "glob": "kotest.properties"
+    },
+    {
+      "glob": "lang"
+    },
+    {
+      "glob": "lang/collection/collection.npl"
+    },
+    {
+      "glob": "lang/collection/list.npl"
+    },
+    {
+      "glob": "lang/collection/map.npl"
+    },
+    {
+      "glob": "lang/collection/set.npl"
+    },
+    {
+      "glob": "lang/core/blob.npl"
+    },
+    {
+      "glob": "lang/core/boolean.npl"
+    },
+    {
+      "glob": "lang/core/common.npl"
+    },
+    {
+      "glob": "lang/core/notifyresult.npl"
+    },
+    {
+      "glob": "lang/core/number.npl"
+    },
+    {
+      "glob": "lang/core/optional.npl"
+    },
+    {
+      "glob": "lang/core/party.npl"
+    },
+    {
+      "glob": "lang/core/protocol.npl"
+    },
+    {
+      "glob": "lang/core/symbol.npl"
+    },
+    {
+      "glob": "lang/core/text.npl"
+    },
+    {
+      "glob": "lang/datetime/datetime.npl"
+    },
+    {
+      "glob": "lang/datetime/duration.npl"
+    },
+    {
+      "glob": "lang/datetime/localdate.npl"
+    },
+    {
+      "glob": "lang/datetime/period.npl"
+    },
+    {
+      "glob": "lang/datetime/zoneid.npl"
+    },
+    {
+      "glob": "lang/math/math.npl"
+    },
+    {
+      "glob": "lang/test/test.npl"
+    },
+    {
+      "glob": "logback-test.scmo"
+    },
+    {
+      "glob": "logback-test.xml"
+    },
+    {
+      "glob": "logback.scmo"
+    },
+    {
+      "glob": "logback.xml"
+    },
+    {
+      "glob": "mockk.properties"
+    },
+    {
+      "glob": "npl-contrib-native"
+    },
+    {
+      "glob": "npl-contrib-native/stdlib/v1/collection/collection.npl"
+    },
+    {
+      "glob": "npl-contrib-native/stdlib/v1/math/math.npl"
+    },
+    {
+      "glob": "npl-contrib-native/stdlib/v1/text/text.npl"
+    },
+    {
+      "glob": "org/apache/commons/vfs2/Resources.properties"
+    },
+    {
+      "glob": "org/apache/commons/vfs2/Resources_en.properties"
+    },
+    {
+      "glob": "org/apache/commons/vfs2/Resources_en_US.properties"
+    },
+    {
+      "glob": "org/apache/commons/vfs2/impl/providers.xml"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
+    },
+    {
+      "module": "java.xml",
+      "glob": "jdk/xml/internal/jdkcatalog/JDKCatalog.xml"
+    }
+  ],
+  "bundles": [],
   "serialization": [
     {
       "type": "byte[]"
