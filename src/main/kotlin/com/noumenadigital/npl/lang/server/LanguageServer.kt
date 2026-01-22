@@ -73,7 +73,8 @@ class LanguageServer(
 
         if (nplRootUris.isNotEmpty()) {
             logger.info("Preloading sources for workspace folders: $nplRootUris")
-            preloadSources(nplRootUris)
+            val nplContribLibs = initParams.nplContribLibraries ?: emptyList()
+            preloadSources(nplRootUris, nplContribLibs)
         } else {
             logger.warn("No workspace folders found to preload.")
         }
@@ -96,8 +97,11 @@ class LanguageServer(
         }
     }
 
-    private fun preloadSources(nplRootUris: List<String>) {
-        compilerService.preloadSources(nplRootUris)
+    private fun preloadSources(
+        nplRootUris: List<String>,
+        nplContribLibs: List<String> = emptyList(),
+    ) {
+        compilerService.preloadSources(nplRootUris, nplContribLibs)
     }
 
     override fun shutdown(): CompletableFuture<Any> {

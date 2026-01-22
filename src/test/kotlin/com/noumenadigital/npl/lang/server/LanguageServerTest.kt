@@ -37,11 +37,11 @@ class LanguageServerTest :
                     InitializeParams().apply {
                         workspaceFolders = listOf(workspaceFolder)
                     }
-
+                val nplContribLibs = emptyList<String>()
                 val result = server.initialize(params).get()
 
                 result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
-                verify { compilerMock.preloadSources(listOf("file:///test/workspace")) }
+                verify { compilerMock.preloadSources(listOf("file:///test/workspace"), nplContribLibs) }
             }
 
             test("initialization with effectiveWorkspaceFolders") {
@@ -82,6 +82,7 @@ class LanguageServerTest :
                     }
 
                 val result = server.initialize(params).get()
+                val nplContribLibs = emptyList<String>()
 
                 result.capabilities.textDocumentSync.left shouldBe TextDocumentSyncKind.Full
                 verify {
@@ -91,6 +92,7 @@ class LanguageServerTest :
                                 uris.contains("file:///effective/workspace1") &&
                                 uris.contains("file:///effective/workspace2")
                         },
+                        nplContribLibs,
                     )
                 }
             }

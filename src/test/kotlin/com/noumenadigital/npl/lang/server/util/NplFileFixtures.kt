@@ -5,6 +5,7 @@ import com.noumenadigital.npl.lang.server.util.UriFixtures.normalizeUri
 import org.intellij.lang.annotations.Language
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.util.concurrent.TimeUnit
 
 object NplFileFixtures {
@@ -28,6 +29,16 @@ object NplFileFixtures {
         val file = directory.resolve(name)
         Files.createDirectories(directory)
         return Files.writeString(file, content)
+    }
+
+    fun moveZipArchive(
+        sourceFile: Path,
+        targetDirectory: Path,
+        newFileName: String? = null,
+    ): Path {
+        Files.createDirectories(targetDirectory)
+        val destination = targetDirectory.resolve(newFileName ?: sourceFile.fileName.toString())
+        return Files.copy(sourceFile, destination, StandardCopyOption.REPLACE_EXISTING)
     }
 
     private fun createTempNplFile(
@@ -74,6 +85,16 @@ object NplFileFixtures {
 
         struct MyStruct {
             badField: NonExistentType
+        }
+        """.trimIndent()
+
+    fun codeValidOnlyWithNplContribLib(): String =
+        """
+        package test
+        use mynpl.MyFoo2;
+
+        struct MyStruct {
+            goodField: MyFoo2
         }
         """.trimIndent()
 }

@@ -1,5 +1,7 @@
 package com.noumenadigital.npl.lang.server.compilation
 
+import com.noumenadigital.npl.contrib.DefaultNplContribLoader
+import com.noumenadigital.npl.contrib.NplContribConfiguration
 import com.noumenadigital.npl.lang.CompileException
 import com.noumenadigital.npl.lang.CompileFailure
 import com.noumenadigital.npl.lang.CompileResult
@@ -8,16 +10,21 @@ import com.noumenadigital.npl.lang.CompilerConfiguration
 import com.noumenadigital.npl.lang.Loader
 import com.noumenadigital.npl.lang.Source
 import com.noumenadigital.npl.lang.server.LanguageClientProvider
+import org.apache.commons.vfs2.FileObject
+import org.apache.commons.vfs2.VFS
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.Range
 import org.intellij.lang.annotations.Language
+import java.io.File
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.extension
 
 private const val NPL_FILE_EXTENSION = "npl"
@@ -31,7 +38,10 @@ interface CompilerService {
 
     fun removeSource(uri: String)
 
-    fun preloadSources(nplRootUris: List<String>)
+    fun preloadSources(
+        nplRootUris: List<String>,
+        nplContribLibs: List<String> = emptyList(),
+    )
 }
 
 class DefaultCompilerService(
@@ -41,6 +51,8 @@ class DefaultCompilerService(
     private val modifiedSources = mutableSetOf<String>()
     private var lastCompileResult: CompileResult? = null
     private var workspacePaths: List<Path> = emptyList()
+    private var contribLibSources: List<Source> = emptyList()
+    private var nplContribConfiguration: NplContribConfiguration = NplContribConfiguration()
 
     private fun compileIfNeeded() {
         if (modifiedSources.isEmpty() && lastCompileResult != null) return
@@ -48,13 +60,12 @@ class DefaultCompilerService(
         // Only compile sources within the workspace
         val sourceList = sources.values.filter { isInWorkspace(Path.of(it.location.toURI())) }.toList()
         if (sourceList.isEmpty()) return
-
         try {
             // TODO ST-4481: Improve error handling - the compiler should not throw exceptions for normal compilation errors.
             // Instead, errors should be part of the CompileResult and we should avoid try-catch for expected errors.
             val compileResult =
-                Loader(CompilerConfiguration(tag = null, quirksMode = true))
-                    .loadPackages(sources = sourceList)
+                Loader(CompilerConfiguration(tag = null, quirksMode = true, nplContribConfiguration = nplContribConfiguration))
+                    .loadPackages(sources = sourceList + contribLibSources)
             lastCompileResult = compileResult
             modifiedSources.clear()
             publishDiagnostics(sourceList, compileResult)
@@ -129,13 +140,20 @@ class DefaultCompilerService(
         clientProvider.client?.publishDiagnostics(PublishDiagnosticsParams(uri, emptyList()))
     }
 
-    override fun preloadSources(nplRootUris: List<String>) {
+    override fun preloadSources(
+        nplRootUris: List<String>,
+        nplContribLibs: List<String>,
+    ) {
         // When workspace changes, we need to clear diagnostics for files that are no longer in workspace
         val oldSources = sources.keys.toSet()
         sources.clear()
         modifiedSources.clear()
 
         workspacePaths = nplRootUris.map { createPathFromUri(it) }
+        if (nplContribLibs.isNotEmpty()) {
+            val archive = zipWorkspaceSources(nplRootUris)
+            contribLibSources = DefaultNplContribLoader.extractNplContribLibSources(nplContribLibs, archive)
+        }
 
         workspacePaths.forEach { workspacePath ->
             Files.walk(workspacePath).use { pathStream ->
@@ -159,6 +177,34 @@ class DefaultCompilerService(
         }
 
         compileIfNeeded()
+    }
+
+    private fun zipWorkspaceSources(nplRootUris: List<String>): FileObject {
+        val zipPath = Files.createTempFile("archive", ".zip")
+        zipPath.toFile().deleteOnExit()
+
+        ZipOutputStream(Files.newOutputStream(zipPath)).use { zos ->
+            nplRootUris.forEach { uriString ->
+                val rootPath = Paths.get(URI(uriString))
+
+                Files.walk(rootPath).forEach { path ->
+                    if (Files.isDirectory(path)) return@forEach
+
+                    val entryName =
+                        rootPath
+                            .relativize(path)
+                            .toString()
+                            .replace(File.separatorChar, '/')
+
+                    zos.putNextEntry(ZipEntry(entryName))
+                    Files.copy(path, zos)
+                    zos.closeEntry()
+                }
+            }
+        }
+
+        val archiveUri = "zip:${zipPath.toUri()}!/"
+        return VFS.getManager().resolveFile(archiveUri)
     }
 
     private fun isInWorkspace(path: Path): Boolean =
