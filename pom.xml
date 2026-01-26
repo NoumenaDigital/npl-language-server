@@ -190,10 +190,6 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <buildArgs>
-                                <buildArg>--exact-reachability-metadata</buildArg>
-                                <buildArg>--strict-image-heap</buildArg>
-                            </buildArgs>
                             <mainClass>com.noumenadigital.npl.lang.server.MainKt</mainClass>
                         </configuration>
                     </plugin>
