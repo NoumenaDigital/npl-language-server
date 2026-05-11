@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit
 class TestLanguageClient(
     private val expectedDiagnosticsCount: Int = 1,
 ) : LanguageClient {
-    private lateinit var server: LanguageServer
+    lateinit var server: LanguageServer
+        private set
     private val receivedMessages = mutableListOf<MessageParams>()
     private val allDiagnostics = mutableListOf<PublishDiagnosticsParams>()
     private var diagnosticsLatch = CountDownLatch(0)

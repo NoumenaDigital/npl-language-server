@@ -10,6 +10,8 @@ import com.noumenadigital.npl.lang.CompilerConfiguration
 import com.noumenadigital.npl.lang.Loader
 import com.noumenadigital.npl.lang.Source
 import com.noumenadigital.npl.lang.server.LanguageClientProvider
+import com.noumenadigital.npl.lang.server.ast.NplAstService
+import com.noumenadigital.npl.lang.server.ast.ParsedFile
 import org.apache.commons.vfs2.FileObject
 import org.apache.commons.vfs2.VFS
 import org.eclipse.lsp4j.Diagnostic
@@ -31,6 +33,8 @@ private const val NPL_FILE_EXTENSION = "npl"
 private const val TARGET_DIR_PATTERN = "/target/"
 
 interface CompilerService {
+    val astService: NplAstService
+
     fun updateSource(
         uri: String,
         @Language("NPL") content: String,
@@ -42,17 +46,39 @@ interface CompilerService {
         nplRootUris: List<String>,
         nplContribLibs: List<String> = emptyList(),
     )
+
+    fun getParsedFile(uri: String): ParsedFile?
+
+    fun getSourceContent(uri: String): String?
+
+    fun getAllParsedFiles(): Map<String, ParsedFile>
 }
 
 class DefaultCompilerService(
     private val clientProvider: LanguageClientProvider,
 ) : CompilerService {
     private val sources = mutableMapOf<String, Source>()
+    private val sourceContents = mutableMapOf<String, String>()
     private val modifiedSources = mutableSetOf<String>()
     private var lastCompileResult: CompileResult? = null
     private var workspacePaths: List<Path> = emptyList()
     private var contribLibSources: List<Source> = emptyList()
     private var nplContribConfiguration: NplContribConfiguration = NplContribConfiguration()
+
+    override val astService = NplAstService()
+
+    override fun getParsedFile(uri: String): ParsedFile? {
+        val content = sourceContents[uri] ?: return null
+        return astService.getOrParse(uri, content)
+    }
+
+    override fun getSourceContent(uri: String): String? = sourceContents[uri]
+
+    override fun getAllParsedFiles(): Map<String, ParsedFile> {
+        return sourceContents.mapNotNull { (uri, content) ->
+            astService.getOrParse(uri, content).let { uri to it }
+        }.toMap()
+    }
 
     private fun compileIfNeeded() {
         if (modifiedSources.isEmpty() && lastCompileResult != null) return
@@ -113,6 +139,10 @@ class DefaultCompilerService(
         val path = createPathFromUri(uri)
         if (path.extension != NPL_FILE_EXTENSION) return
 
+        // Always store content and parse for AST-based features
+        sourceContents[uri] = content
+        astService.getOrParse(uri, content)
+
         if (isInWorkspace(path)) {
             sources[uri] = Source(path, content)
             modifiedSources.add(uri)
@@ -147,6 +177,7 @@ class DefaultCompilerService(
         // When workspace changes, we need to clear diagnostics for files that are no longer in workspace
         val oldSources = sources.keys.toSet()
         sources.clear()
+        sourceContents.clear()
         modifiedSources.clear()
 
         workspacePaths = nplRootUris.map { createPathFromUri(it) }
@@ -162,7 +193,9 @@ class DefaultCompilerService(
                     .filter { !it.toString().contains(TARGET_DIR_PATTERN) }
                     .forEach { path ->
                         val uri = path.toUri().toString()
-                        sources[uri] = Source(path, Files.readString(path))
+                        val content = Files.readString(path)
+                        sources[uri] = Source(path, content)
+                        sourceContents[uri] = content
                         modifiedSources.add(uri)
                     }
             }

@@ -2,6 +2,8 @@ package com.noumenadigital.npl.lang.server
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import com.noumenadigital.npl.lang.server.ast.NplAstService
+import com.noumenadigital.npl.lang.server.ast.ParsedFile
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
 import com.noumenadigital.npl.lang.server.util.DiagnosticTestUtils
@@ -459,6 +461,8 @@ class LanguageServerIntegrationTest : FunSpec() {
         test("custom compiler service can be provided") {
             val mockService =
                 object : CompilerService {
+                    override val astService = NplAstService()
+
                     override fun updateSource(
                         uri: String,
                         content: String,
@@ -470,6 +474,12 @@ class LanguageServerIntegrationTest : FunSpec() {
                         nplRootUris: List<String>,
                         nplContribLibs: List<String>,
                     ) {}
+
+                    override fun getParsedFile(uri: String): ParsedFile? = null
+
+                    override fun getSourceContent(uri: String): String? = null
+
+                    override fun getAllParsedFiles(): Map<String, ParsedFile> = emptyMap()
                 }
 
             val server =
@@ -502,6 +512,8 @@ class CompilerServiceSpy(
     var preloadedUri: String? = null
     var preloadedUris: List<String> = emptyList()
 
+    override val astService: NplAstService get() = delegate.astService
+
     override fun updateSource(
         uri: String,
         content: String,
@@ -520,4 +532,10 @@ class CompilerServiceSpy(
         preloadedUris = nplRootUris
         delegate.preloadSources(nplRootUris, nplContribLibs)
     }
+
+    override fun getParsedFile(uri: String): ParsedFile? = delegate.getParsedFile(uri)
+
+    override fun getSourceContent(uri: String): String? = delegate.getSourceContent(uri)
+
+    override fun getAllParsedFiles(): Map<String, ParsedFile> = delegate.getAllParsedFiles()
 }

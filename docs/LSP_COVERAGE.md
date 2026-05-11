@@ -49,9 +49,9 @@ Legend:
 
 | LSP Feature | Status | Notes |
 |---|---|---|
-| `textDocument/completion` | 🔲 | Stub — requires compiler symbol table |
+| `textDocument/completion` | ✅ | Context-aware completions for keywords, types, functions, and user-defined symbols |
 | `completionItem/resolve` | 🔲 | Stub |
-| `textDocument/hover` | 🔲 | Stub — requires compiler type info |
+| `textDocument/hover` | ✅ | Type info & documentation on hover for all declarations |
 | `textDocument/signatureHelp` | 🔲 | Stub — requires compiler AST |
 | `textDocument/inlayHint` | 🔲 | Stub |
 | `inlayHint/resolve` | 🔲 | Stub |
@@ -63,11 +63,11 @@ Legend:
 
 | LSP Feature | Status | Notes |
 |---|---|---|
-| `textDocument/definition` | 🔲 | Stub — requires compiler symbol resolution |
-| `textDocument/declaration` | 🔲 | Stub |
-| `textDocument/typeDefinition` | 🔲 | Stub |
-| `textDocument/implementation` | 🔲 | Stub |
-| `textDocument/references` | 🔲 | Stub — requires compiler reference tracking |
+| `textDocument/definition` | ✅ | Go to definition for functions, protocols, structs, unions, enums, notifications, states |
+| `textDocument/declaration` | ✅ | Delegates to definition (NPL has no separate declaration/definition distinction) |
+| `textDocument/typeDefinition` | ✅ | Navigate to type definition of variables, parameters, fields; returns empty for built-in types |
+| `textDocument/implementation` | ✅ | For unions: finds all variants; for protocols: finds states and actions; others: falls back to definition |
+| `textDocument/references` | ✅ | Find all references across loaded files |
 
 ---
 
@@ -75,7 +75,7 @@ Legend:
 
 | LSP Feature | Status | Notes |
 |---|---|---|
-| `textDocument/documentSymbol` | 🔲 | Stub — outline view (structs, functions, protocols…) |
+| `textDocument/documentSymbol` | ✅ | Outline view: protocols, functions, structs, unions, enums, notifications, constants |
 | `textDocument/documentHighlight` | 🔲 | Stub — highlight other occurrences |
 | `workspace/symbol` | 🔲 | Stub — cross-file symbol search |
 | `workspaceSymbol/resolve` | 🔲 | Stub |
@@ -86,10 +86,10 @@ Legend:
 
 | LSP Feature | Status | Notes |
 |---|---|---|
-| `textDocument/codeAction` | 🔲 | Stub — quick fixes, refactors |
-| `codeAction/resolve` | 🔲 | Stub |
-| `textDocument/codeLens` | 🔲 | Stub |
-| `codeLens/resolve` | 🔲 | Stub |
+| `textDocument/codeAction` | ✅ | Quick fixes (imports, remove unused), source actions (organize imports, generate init/toString), refactoring (extract variable, convert permission/obligation) |
+| `codeAction/resolve` | ✅ | Actions are fully resolved when returned |
+| `textDocument/codeLens` | ✅ | Reference counts for functions, structs, protocols, unions, enums, notifications; state/action counts for protocols; variant counts for unions/enums |
+| `codeLens/resolve` | ✅ | Lenses are fully resolved when returned |
 
 ---
 
@@ -107,8 +107,8 @@ Legend:
 
 | LSP Feature | Status | Notes |
 |---|---|---|
-| `textDocument/rename` | 🔲 | Stub — requires compiler reference tracking |
-| `textDocument/prepareRename` | 🔲 | Stub |
+| `textDocument/rename` | ✅ | Rename symbols across all loaded files; validates new name is a valid identifier |
+| `textDocument/prepareRename` | ✅ | Returns symbol range and placeholder; rejects built-in types and keywords |
 
 ---
 
@@ -116,7 +116,7 @@ Legend:
 
 | LSP Feature | Status | Notes |
 |---|---|---|
-| `textDocument/semanticTokens/full` | 🔲 | Stub — requires compiler AST walk |
+| `textDocument/semanticTokens/full` | ✅ | Rich highlighting for keywords, types, functions, variables, parameters, comments, and more |
 | `textDocument/semanticTokens/full/delta` | 🔲 | Stub |
 | `textDocument/semanticTokens/range` | 🔲 | Stub |
 
@@ -137,16 +137,16 @@ Legend:
 
 ## Document Extras
 
-| LSP Feature | Status | Notes |
-|---|---|---|
-| `textDocument/foldingRange` | 🔲 | Stub |
-| `textDocument/selectionRange` | 🔲 | Stub |
-| `textDocument/linkedEditingRange` | 🔲 | Stub |
-| `textDocument/documentLink` | 🔲 | Stub |
-| `documentLink/resolve` | 🔲 | Stub |
-| `textDocument/documentColor` | ➖ | Not applicable to NPL |
-| `textDocument/colorPresentation` | ➖ | Not applicable to NPL |
-| `textDocument/moniker` | 🔲 | Stub |
+| LSP Feature | Status | Notes                                                       |
+|---|---|-------------------------------------------------------------|
+| `textDocument/foldingRange` | ✅ | Import blocks, protocols, functions, structs, comments etc. |
+| `textDocument/selectionRange` | 🔲 | Stub                                                        |
+| `textDocument/linkedEditingRange` | 🔲 | Stub                                                        |
+| `textDocument/documentLink` | 🔲 | Stub                                                        |
+| `documentLink/resolve` | 🔲 | Stub                                                        |
+| `textDocument/documentColor` | ➖ | Not applicable to NPL                                       |
+| `textDocument/colorPresentation` | ➖ | Not applicable to NPL                                       |
+| `textDocument/moniker` | 🔲 | Stub                                                        |
 
 ---
 

@@ -4,6 +4,19 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
+import com.noumenadigital.npl.lang.server.features.CodeActionProvider
+import com.noumenadigital.npl.lang.server.features.CodeLensProvider
+import com.noumenadigital.npl.lang.server.features.CompletionProvider
+import com.noumenadigital.npl.lang.server.features.DeclarationProvider
+import com.noumenadigital.npl.lang.server.features.DefinitionProvider
+import com.noumenadigital.npl.lang.server.features.DocumentSymbolProvider
+import com.noumenadigital.npl.lang.server.features.FoldingRangeProvider
+import com.noumenadigital.npl.lang.server.features.HoverProvider
+import com.noumenadigital.npl.lang.server.features.ImplementationProvider
+import com.noumenadigital.npl.lang.server.features.ReferencesProvider
+import com.noumenadigital.npl.lang.server.features.RenameProvider
+import com.noumenadigital.npl.lang.server.features.SemanticTokensProvider
+import com.noumenadigital.npl.lang.server.features.TypeDefinitionProvider
 import mu.KotlinLogging
 import org.eclipse.lsp4j.CallHierarchyIncomingCall
 import org.eclipse.lsp4j.CallHierarchyIncomingCallsParams
@@ -134,12 +147,48 @@ class LanguageServer(
         val capabilities =
             ServerCapabilities().apply {
                 textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
+                // Document symbols (outline view)
+                documentSymbolProvider = Either.forLeft(true)
+                // Folding ranges
+                foldingRangeProvider = Either.forLeft(true)
+                // Hover (type info & docs)
+                hoverProvider = Either.forLeft(true)
+                // Go to definition
+                definitionProvider = Either.forLeft(true)
+                // Go to declaration (delegates to definition in NPL)
+                declarationProvider = Either.forLeft(true)
+                // Go to type definition
+                typeDefinitionProvider = Either.forLeft(true)
+                // Go to implementation
+                implementationProvider = Either.forLeft(true)
+                // Find references
+                referencesProvider = Either.forLeft(true)
+                // Completion
+                completionProvider = org.eclipse.lsp4j.CompletionOptions().apply {
+                    triggerCharacters = listOf(".", ":")
+                    resolveProvider = false
+                }
+                // Semantic tokens for rich highlighting
+                semanticTokensProvider = org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions().apply {
+                    legend = SemanticTokensProvider.legend
+                    full = Either.forLeft(true)
+                }
+                // Rename support with prepare
+                renameProvider = Either.forLeft(true)
+                // Code actions (quick fixes and refactoring)
+                codeActionProvider = Either.forLeft(true)
+                // Code lenses (reference counts, etc.)
+                codeLensProvider = org.eclipse.lsp4j.CodeLensOptions().apply {
+                    resolveProvider = true
+                }
             }
 
         val standardWorkspaceFolderUris =
             params.workspaceFolders
                 ?.filterNotNull()
                 ?.mapNotNull { it.uri }
+                ?.takeIf { it.isNotEmpty() }
+                ?: params.rootUri?.let { listOf(it) }
 
         val initParams: InitializationOptions = extractInitializeOptions(params.initializationOptions)
         scheduler = LspScheduler(initParams.nplServerDebouncingTimeMs.toLong())
@@ -250,8 +299,13 @@ class LanguageServer(
 
         /** [LSP: textDocument/completion](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion) */
         override fun completion(params: CompletionParams): CompletableFuture<Either<MutableList<CompletionItem>, CompletionList>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(Either.forLeft(mutableListOf()))
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val items = CompletionProvider.getCompletions(parsedFile, params.position, allFiles)
+            return completedFuture(Either.forLeft(items.toMutableList()))
         }
 
         /** [LSP: completionItem/resolve](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#completionItem_resolve) */
@@ -262,8 +316,12 @@ class LanguageServer(
 
         /** [LSP: textDocument/hover](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_hover) */
         override fun hover(params: HoverParams): CompletableFuture<Hover> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(null)
+
+            val hover = HoverProvider.getHover(parsedFile, params.position)
+            return completedFuture(hover)
         }
 
         /** [LSP: textDocument/signatureHelp](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_signatureHelp) */
@@ -306,32 +364,58 @@ class LanguageServer(
 
         /** [LSP: textDocument/declaration](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_declaration) */
         override fun declaration(params: DeclarationParams): CompletableFuture<Either<MutableList<out Location>, MutableList<out LocationLink>>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(null)
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val locations = DeclarationProvider.getDeclaration(parsedFile, params.position, allFiles)
+            return completedFuture(Either.forLeft(locations.toMutableList()))
         }
 
         /** [LSP: textDocument/definition](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition) */
         override fun definition(params: DefinitionParams): CompletableFuture<Either<MutableList<out Location>, MutableList<out LocationLink>>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(null)
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val locations = DefinitionProvider.getDefinition(parsedFile, params.position, allFiles)
+            return completedFuture(Either.forLeft(locations.toMutableList()))
         }
 
         /** [LSP: textDocument/typeDefinition](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_typeDefinition) */
         override fun typeDefinition(params: TypeDefinitionParams): CompletableFuture<Either<MutableList<out Location>, MutableList<out LocationLink>>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(null)
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val locations = TypeDefinitionProvider.getTypeDefinition(parsedFile, params.position, allFiles)
+            return completedFuture(Either.forLeft(locations.toMutableList()))
         }
 
         /** [LSP: textDocument/implementation](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_implementation) */
         override fun implementation(params: ImplementationParams): CompletableFuture<Either<MutableList<out Location>, MutableList<out LocationLink>>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(null)
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val locations = ImplementationProvider.getImplementation(parsedFile, params.position, allFiles)
+            return completedFuture(Either.forLeft(locations.toMutableList()))
         }
 
         /** [LSP: textDocument/references](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_references) */
         override fun references(params: ReferenceParams): CompletableFuture<MutableList<out Location>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(mutableListOf())
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val includeDeclaration = params.context?.isIncludeDeclaration ?: false
+            val locations = ReferencesProvider.getReferences(parsedFile, params.position, includeDeclaration, allFiles)
+            return completedFuture(locations.toMutableList())
         }
 
         // ─── Symbols & Highlights ─────────────────────────────────────────────
@@ -344,34 +428,49 @@ class LanguageServer(
 
         /** [LSP: textDocument/documentSymbol](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_documentSymbol) */
         override fun documentSymbol(params: DocumentSymbolParams): CompletableFuture<MutableList<Either<SymbolInformation, DocumentSymbol>>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(mutableListOf())
+
+            val symbols = DocumentSymbolProvider.getDocumentSymbols(parsedFile)
+            return completedFuture(symbols.map { Either.forRight<SymbolInformation, DocumentSymbol>(it) }.toMutableList())
         }
 
         // ─── Code Actions & Lens ──────────────────────────────────────────────
 
         /** [LSP: textDocument/codeAction](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_codeAction) */
         override fun codeAction(params: CodeActionParams): CompletableFuture<MutableList<Either<Command, CodeAction>>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(mutableListOf())
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val actions = CodeActionProvider.getCodeActions(parsedFile, params, allFiles)
+            return completedFuture(actions.map { Either.forRight<Command, CodeAction>(it) }.toMutableList())
         }
 
         /** [LSP: codeAction/resolve](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#codeAction_resolve) */
         override fun resolveCodeAction(unresolved: CodeAction): CompletableFuture<CodeAction> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            // Code actions are fully resolved when returned, no lazy resolution needed
+            return completedFuture(unresolved)
         }
 
         /** [LSP: textDocument/codeLens](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_codeLens) */
         override fun codeLens(params: CodeLensParams): CompletableFuture<MutableList<out CodeLens>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(mutableListOf())
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val lenses = CodeLensProvider.getCodeLenses(parsedFile, allFiles)
+            return completedFuture(lenses.toMutableList())
         }
 
         /** [LSP: codeLens/resolve](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#codeLens_resolve) */
         override fun resolveCodeLens(unresolved: CodeLens): CompletableFuture<CodeLens> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            // Code lenses are fully resolved when returned (includes commands)
+            // If lazy resolution is needed in the future, implement here
+            return completedFuture(unresolved)
         }
 
         // ─── Formatting ───────────────────────────────────────────────────────
@@ -398,14 +497,25 @@ class LanguageServer(
 
         /** [LSP: textDocument/rename](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_rename) */
         override fun rename(params: RenameParams): CompletableFuture<WorkspaceEdit> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(null)
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val edit = RenameProvider.rename(parsedFile, params.position, params.newName, allFiles)
+            return completedFuture(edit)
         }
 
         /** [LSP: textDocument/prepareRename](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_prepareRename) */
         override fun prepareRename(params: PrepareRenameParams): CompletableFuture<Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(null)
+
+            val result = RenameProvider.prepareRename(parsedFile, params.position)
+                ?: return completedFuture(null)
+
+            return completedFuture(Either3.forSecond(result))
         }
 
         // ─── Document Extras ──────────────────────────────────────────────────
@@ -442,8 +552,12 @@ class LanguageServer(
 
         /** [LSP: textDocument/foldingRange](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_foldingRange) */
         override fun foldingRange(params: FoldingRangeRequestParams): CompletableFuture<MutableList<FoldingRange>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(mutableListOf())
+
+            val ranges = FoldingRangeProvider.getFoldingRanges(parsedFile)
+            return completedFuture(ranges.toMutableList())
         }
 
         /** [LSP: textDocument/selectionRange](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_selectionRange) */
@@ -456,8 +570,12 @@ class LanguageServer(
 
         /** [LSP: textDocument/semanticTokens/full](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokens_fullRequest) */
         override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(SemanticTokens(emptyList()))
+
+            val tokens = SemanticTokensProvider.getSemanticTokens(parsedFile)
+            return completedFuture(tokens)
         }
 
         /** [LSP: textDocument/semanticTokens/full/delta](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokens_deltaRequest) */
