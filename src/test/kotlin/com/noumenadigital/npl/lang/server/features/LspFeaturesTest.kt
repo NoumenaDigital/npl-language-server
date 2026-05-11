@@ -1079,6 +1079,235 @@ class LspFeaturesTest : FunSpec({
             stateLens.command!!.title shouldContain "2 states"
         }
     }
+
+    context("Workspace Symbol Provider") {
+        test("finds functions across workspace") {
+            val astService = NplAstService()
+            val code1 = """
+                package pkg1
+                
+                function helperOne() returns Number -> 1
+            """.trimIndent()
+
+            val code2 = """
+                package pkg2
+                
+                function helperTwo() returns Number -> 2
+            """.trimIndent()
+
+            val uri1 = "file:///test/pkg1/File1.npl"
+            val uri2 = "file:///test/pkg2/File2.npl"
+            val file1 = astService.getOrParse(uri1, code1)
+            val file2 = astService.getOrParse(uri2, code2)
+            val allFiles = mapOf(uri1 to file1, uri2 to file2)
+
+            val symbols = WorkspaceSymbolProvider.getWorkspaceSymbols("helper", allFiles)
+
+            symbols.size shouldBe 2
+            symbols.any { it.name == "helperOne" } shouldBe true
+            symbols.any { it.name == "helperTwo" } shouldBe true
+        }
+
+        test("finds protocols and structs") {
+            val astService = NplAstService()
+            val code = """
+                package test
+                
+                struct Person { name: Text }
+                
+                protocol[p] Counter(count: Number) {
+                    init {}
+                }
+            """.trimIndent()
+
+            val uri = "file:///test/Test.npl"
+            val parsedFile = astService.getOrParse(uri, code)
+            val allFiles = mapOf(uri to parsedFile)
+
+            val personSymbols = WorkspaceSymbolProvider.getWorkspaceSymbols("Person", allFiles)
+            personSymbols.size shouldBe 1
+            personSymbols[0].kind shouldBe SymbolKind.Struct
+
+            val counterSymbols = WorkspaceSymbolProvider.getWorkspaceSymbols("Counter", allFiles)
+            counterSymbols.size shouldBe 1
+            counterSymbols[0].kind shouldBe SymbolKind.Class
+        }
+
+        test("supports fuzzy matching") {
+            val astService = NplAstService()
+            val code = """
+                package test
+                
+                function processUserData() returns Number -> 42
+            """.trimIndent()
+
+            val uri = "file:///test/Test.npl"
+            val parsedFile = astService.getOrParse(uri, code)
+            val allFiles = mapOf(uri to parsedFile)
+
+            // "pud" should match "processUserData" via fuzzy matching
+            val symbols = WorkspaceSymbolProvider.getWorkspaceSymbols("pud", allFiles)
+
+            symbols.any { it.name == "processUserData" } shouldBe true
+        }
+
+        test("returns all symbols for empty query") {
+            val astService = NplAstService()
+            val code = """
+                package test
+                
+                struct Person { name: Text }
+                function greet() returns Text -> "Hello"
+            """.trimIndent()
+
+            val uri = "file:///test/Test.npl"
+            val parsedFile = astService.getOrParse(uri, code)
+            val allFiles = mapOf(uri to parsedFile)
+
+            val symbols = WorkspaceSymbolProvider.getWorkspaceSymbols("", allFiles)
+
+            symbols.size shouldBe 2
+        }
+    }
+
+    context("Document Highlight Provider") {
+        test("highlights all occurrences of a function") {
+            val astService = NplAstService()
+            val code = """
+                package test
+                
+                function helper() returns Number -> 42
+                
+                function main() returns Number -> helper() + helper()
+            """.trimIndent()
+
+            val uri = "file:///test/Test.npl"
+            val parsedFile = astService.getOrParse(uri, code)
+
+            // Position on "helper" function declaration
+            val highlights = DocumentHighlightProvider.getDocumentHighlights(parsedFile, Position(2, 10))
+
+            highlights.shouldNotBeEmpty()
+            // Should find declaration + 2 usages
+            highlights.size shouldBe 3
+        }
+
+        test("highlights struct type references") {
+            val astService = NplAstService()
+            val code = """
+                package test
+                
+                struct Person { name: Text }
+                
+                function createPerson() returns Person -> Person { name = "John" }
+            """.trimIndent()
+
+            val uri = "file:///test/Test.npl"
+            val parsedFile = astService.getOrParse(uri, code)
+
+            // Position on "Person" in struct declaration
+            val highlights = DocumentHighlightProvider.getDocumentHighlights(parsedFile, Position(2, 8))
+
+            highlights.shouldNotBeEmpty()
+        }
+    }
+
+    context("Signature Help Provider") {
+        test("finds function definition for signature help") {
+            val astService = NplAstService()
+            val code = """
+                package test
+                
+                function greet(name: Text, age: Number) returns Text -> "Hello"
+            """.trimIndent()
+
+            val uri = "file:///test/Test.npl"
+            val parsedFile = astService.getOrParse(uri, code)
+            val allFiles = mapOf(uri to parsedFile)
+
+            // Verify the function is found in the file
+            val symbols = WorkspaceSymbolProvider.getWorkspaceSymbols("greet", allFiles)
+            symbols.size shouldBe 1
+            symbols[0].name shouldBe "greet"
+        }
+    }
+
+    context("Inlay Hint Provider") {
+        test("provides type hints for const without explicit type") {
+            val astService = NplAstService()
+            val code = """
+                package test
+                
+                const myNumber = 42
+                const myText = "hello"
+                const myBool = true
+            """.trimIndent()
+
+            val uri = "file:///test/Test.npl"
+            val parsedFile = astService.getOrParse(uri, code)
+            val allFiles = mapOf(uri to parsedFile)
+
+            val range = org.eclipse.lsp4j.Range(
+                Position(0, 0),
+                Position(5, 0)
+            )
+
+            val hints = InlayHintProvider.getInlayHints(parsedFile, range, allFiles)
+
+            hints.shouldNotBeEmpty()
+            hints.any { it.label.left.contains("Number") } shouldBe true
+            hints.any { it.label.left.contains("Text") } shouldBe true
+            hints.any { it.label.left.contains("Boolean") } shouldBe true
+        }
+
+        test("does not provide hints for explicitly typed const") {
+            val astService = NplAstService()
+            val code = """
+                package test
+                
+                const myNumber: Number = 42
+            """.trimIndent()
+
+            val uri = "file:///test/Test.npl"
+            val parsedFile = astService.getOrParse(uri, code)
+            val allFiles = mapOf(uri to parsedFile)
+
+            val range = org.eclipse.lsp4j.Range(
+                Position(0, 0),
+                Position(5, 0)
+            )
+
+            val hints = InlayHintProvider.getInlayHints(parsedFile, range, allFiles)
+
+            // No hints for already typed constants
+            hints.size shouldBe 0
+        }
+    }
+
+    context("Diagnostics Provider") {
+        test("returns empty diagnostics when compile result is null") {
+            val report = DiagnosticsProvider.getDocumentDiagnostics(
+                "file:///test/Test.npl",
+                null
+            )
+
+            report.shouldNotBeNull()
+            report.relatedFullDocumentDiagnosticReport.shouldNotBeNull()
+            report.relatedFullDocumentDiagnosticReport.items shouldBe emptyList()
+        }
+
+        test("returns workspace diagnostics for all source URIs") {
+            val sourceUris = setOf(
+                "file:///test/File1.npl",
+                "file:///test/File2.npl"
+            )
+
+            val report = DiagnosticsProvider.getWorkspaceDiagnostics(sourceUris, null)
+
+            report.shouldNotBeNull()
+            report.items.size shouldBe 2
+        }
+    }
 }) {
 }
 

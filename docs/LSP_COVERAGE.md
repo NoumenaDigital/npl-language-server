@@ -40,8 +40,8 @@ Legend:
 | LSP Feature | Status | Notes |
 |---|---|---|
 | `textDocument/publishDiagnostics` (push) | ✅ | Compiler errors & warnings with range, severity, code, message |
-| `textDocument/diagnostic` (pull) | 🔲 | Stub |
-| `workspace/diagnostic` (pull) | 🔲 | Stub |
+| `textDocument/diagnostic` (pull) | ✅ | Returns diagnostics for a single document on demand |
+| `workspace/diagnostic` (pull) | ✅ | Returns diagnostics for all workspace documents |
 
 ---
 
@@ -52,8 +52,8 @@ Legend:
 | `textDocument/completion` | ✅ | Context-aware completions for keywords, types, functions, and user-defined symbols |
 | `completionItem/resolve` | 🔲 | Stub |
 | `textDocument/hover` | ✅ | Type info & documentation on hover for all declarations |
-| `textDocument/signatureHelp` | 🔲 | Stub — requires compiler AST |
-| `textDocument/inlayHint` | 🔲 | Stub |
+| `textDocument/signatureHelp` | ✅ | Shows function signature with parameter info while typing inside function calls |
+| `textDocument/inlayHint` | ✅ | Type hints for constants without explicit type annotations |
 | `inlayHint/resolve` | 🔲 | Stub |
 | `textDocument/inlineValue` | 🔲 | Stub |
 
@@ -76,8 +76,8 @@ Legend:
 | LSP Feature | Status | Notes |
 |---|---|---|
 | `textDocument/documentSymbol` | ✅ | Outline view: protocols, functions, structs, unions, enums, notifications, constants |
-| `textDocument/documentHighlight` | 🔲 | Stub — highlight other occurrences |
-| `workspace/symbol` | 🔲 | Stub — cross-file symbol search |
+| `textDocument/documentHighlight` | ✅ | Highlights all occurrences of a symbol in the current document |
+| `workspace/symbol` | ✅ | Cross-file symbol search with fuzzy matching; finds functions, protocols, structs, unions, enums, notifications, constants, states, actions |
 | `workspaceSymbol/resolve` | 🔲 | Stub |
 
 ---
@@ -171,14 +171,23 @@ Legend:
 
 Priority order based on editor-experience value and compiler API availability:
 
-1. `textDocument/hover` — type info & docs on hover
-2. `textDocument/definition` — go to definition
-3. `textDocument/documentSymbol` — outline / breadcrumb navigation
-4. `textDocument/references` — find all references
-5. `textDocument/rename` / `textDocument/prepareRename` — safe rename
-6. `textDocument/completion` — auto-complete
-7. `textDocument/semanticTokens/full` — rich syntax highlighting
-8. `textDocument/foldingRange` — code folding
-9. `textDocument/signatureHelp` — function signature hints
-10. `textDocument/codeAction` — quick fixes
+1. ✅ `textDocument/hover` — type info & docs on hover
+2. ✅ `textDocument/definition` — go to definition
+3. ✅ `textDocument/documentSymbol` — outline / breadcrumb navigation
+4. ✅ `textDocument/references` — find all references
+5. ✅ `textDocument/rename` / `textDocument/prepareRename` — safe rename
+6. ✅ `textDocument/completion` — auto-complete
+7. ✅ `textDocument/semanticTokens/full` — rich syntax highlighting
+8. ✅ `textDocument/foldingRange` — code folding
+9. ✅ `textDocument/signatureHelp` — function signature hints
+10. ✅ `textDocument/codeAction` — quick fixes
+11. ✅ `workspace/symbol` — cross-file symbol search
+12. ✅ `textDocument/documentHighlight` — highlight other occurrences
+13. ✅ `textDocument/inlayHint` — type hints
+
+### Next priorities:
+
+1. `textDocument/formatting` — auto-format code
+2. `textDocument/prepareCallHierarchy` — call hierarchy navigation
+3. `textDocument/linkedEditingRange` — edit multiple related ranges
 

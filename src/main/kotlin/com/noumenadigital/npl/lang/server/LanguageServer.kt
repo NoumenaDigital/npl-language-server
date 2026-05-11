@@ -9,14 +9,19 @@ import com.noumenadigital.npl.lang.server.features.CodeLensProvider
 import com.noumenadigital.npl.lang.server.features.CompletionProvider
 import com.noumenadigital.npl.lang.server.features.DeclarationProvider
 import com.noumenadigital.npl.lang.server.features.DefinitionProvider
+import com.noumenadigital.npl.lang.server.features.DiagnosticsProvider
+import com.noumenadigital.npl.lang.server.features.DocumentHighlightProvider
 import com.noumenadigital.npl.lang.server.features.DocumentSymbolProvider
 import com.noumenadigital.npl.lang.server.features.FoldingRangeProvider
 import com.noumenadigital.npl.lang.server.features.HoverProvider
 import com.noumenadigital.npl.lang.server.features.ImplementationProvider
+import com.noumenadigital.npl.lang.server.features.InlayHintProvider
 import com.noumenadigital.npl.lang.server.features.ReferencesProvider
 import com.noumenadigital.npl.lang.server.features.RenameProvider
 import com.noumenadigital.npl.lang.server.features.SemanticTokensProvider
+import com.noumenadigital.npl.lang.server.features.SignatureHelpProvider
 import com.noumenadigital.npl.lang.server.features.TypeDefinitionProvider
+import com.noumenadigital.npl.lang.server.features.WorkspaceSymbolProvider
 import mu.KotlinLogging
 import org.eclipse.lsp4j.CallHierarchyIncomingCall
 import org.eclipse.lsp4j.CallHierarchyIncomingCallsParams
@@ -181,6 +186,22 @@ class LanguageServer(
                 codeLensProvider = org.eclipse.lsp4j.CodeLensOptions().apply {
                     resolveProvider = true
                 }
+                // Document highlight (highlight occurrences)
+                documentHighlightProvider = Either.forLeft(true)
+                // Signature help (function signatures while typing)
+                signatureHelpProvider = org.eclipse.lsp4j.SignatureHelpOptions().apply {
+                    triggerCharacters = listOf("(", ",")
+                    retriggerCharacters = listOf(",")
+                }
+                // Inlay hints (parameter names, type hints)
+                inlayHintProvider = Either.forLeft(true)
+                // Workspace symbol search
+                workspaceSymbolProvider = Either.forLeft(true)
+                // Pull diagnostics (in addition to push diagnostics)
+                diagnosticProvider = org.eclipse.lsp4j.DiagnosticRegistrationOptions().apply {
+                    setInterFileDependencies(true)
+                    setWorkspaceDiagnostics(true)
+                }
             }
 
         val standardWorkspaceFolderUris =
@@ -326,8 +347,13 @@ class LanguageServer(
 
         /** [LSP: textDocument/signatureHelp](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_signatureHelp) */
         override fun signatureHelp(params: SignatureHelpParams): CompletableFuture<SignatureHelp> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(null)
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val help = SignatureHelpProvider.getSignatureHelp(parsedFile, params.position, allFiles)
+            return completedFuture(help)
         }
 
         /** [LSP: textDocument/willSaveWaitUntil](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_willSaveWaitUntil) */
@@ -338,8 +364,13 @@ class LanguageServer(
 
         /** [LSP: textDocument/inlayHint](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_inlayHint) */
         override fun inlayHint(params: InlayHintParams): CompletableFuture<MutableList<InlayHint>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(mutableListOf())
+
+            val allFiles = compilerService.getAllParsedFiles()
+            val hints = InlayHintProvider.getInlayHints(parsedFile, params.range, allFiles)
+            return completedFuture(hints.toMutableList())
         }
 
         /** [LSP: inlayHint/resolve](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#inlayHint_resolve) */
@@ -422,8 +453,12 @@ class LanguageServer(
 
         /** [LSP: textDocument/documentHighlight](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_documentHighlight) */
         override fun documentHighlight(params: DocumentHighlightParams): CompletableFuture<MutableList<out DocumentHighlight>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(mutableListOf())
+
+            val highlights = DocumentHighlightProvider.getDocumentHighlights(parsedFile, params.position)
+            return completedFuture(highlights.toMutableList())
         }
 
         /** [LSP: textDocument/documentSymbol](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_documentSymbol) */
@@ -632,8 +667,10 @@ class LanguageServer(
 
         /** [LSP: textDocument/diagnostic](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_pullDiagnostics) */
         override fun diagnostic(params: DocumentDiagnosticParams): CompletableFuture<DocumentDiagnosticReport> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val compileResult = compilerService.getCompileResult()
+            val report = DiagnosticsProvider.getDocumentDiagnostics(uri, compileResult)
+            return completedFuture(report)
         }
     }
 
@@ -663,8 +700,9 @@ class LanguageServer(
 
         /** [LSP: workspace/symbol](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbol) */
         override fun symbol(params: WorkspaceSymbolParams): CompletableFuture<Either<MutableList<out SymbolInformation>, MutableList<out WorkspaceSymbol>>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val allFiles = compilerService.getAllParsedFiles()
+            val symbols = WorkspaceSymbolProvider.getWorkspaceSymbols(params.query, allFiles)
+            return completedFuture(Either.forRight(symbols.toMutableList()))
         }
 
         /** [LSP: workspaceSymbol/resolve](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbolResolve) */
@@ -722,8 +760,10 @@ class LanguageServer(
 
         /** [LSP: workspace/diagnostic](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_diagnostic) */
         override fun diagnostic(params: WorkspaceDiagnosticParams): CompletableFuture<WorkspaceDiagnosticReport> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val sourceUris = compilerService.getSourceUris()
+            val compileResult = compilerService.getCompileResult()
+            val report = DiagnosticsProvider.getWorkspaceDiagnostics(sourceUris, compileResult)
+            return completedFuture(report)
         }
     }
 }

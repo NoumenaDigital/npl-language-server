@@ -92,12 +92,18 @@ object CompletionProvider {
     private fun determineCompletionContext(parsedFile: ParsedFile, position: Position): CompletionContext {
         val node = parsedFile.findNodeAt(position)
 
-        // Walk up to find context
+        // First, check text-based heuristics for incomplete code
+        val textBasedContext = detectContextFromText(parsedFile, position)
+        if (textBasedContext != null) return textBasedContext
+
+        // Walk up to find context from AST
         var current = node as? ParserRuleContext
         while (current != null) {
             when (current) {
                 is NplParser.RootContext -> return CompletionContext.TOP_LEVEL
                 is NplParser.TypeExprContext -> return CompletionContext.TYPE_POSITION
+                is NplParser.SimpleTypeExprContext -> return CompletionContext.TYPE_POSITION
+                is NplParser.TypedIdentifierContext -> return CompletionContext.TYPE_POSITION
                 is NplParser.ExprContext -> return CompletionContext.EXPRESSION
                 is NplParser.ProtocolDeclContext -> return CompletionContext.PROTOCOL_BODY
                 is NplParser.BlockContext -> return CompletionContext.EXPRESSION
@@ -106,6 +112,40 @@ object CompletionProvider {
         }
 
         return CompletionContext.UNKNOWN
+    }
+
+    /**
+     * Detect completion context from raw text when AST is incomplete.
+     * This handles cases like "name: |" where cursor is after a colon.
+     */
+    private fun detectContextFromText(parsedFile: ParsedFile, position: Position): CompletionContext? {
+        val lines = parsedFile.lines
+        val lineIndex = position.line
+        if (lineIndex >= lines.size) return null
+
+        val line = lines[lineIndex]
+        val cursorColumn = position.character
+
+        // Get the text before the cursor
+        val textBeforeCursor = if (cursorColumn <= line.length) {
+            line.substring(0, cursorColumn)
+        } else {
+            line
+        }
+
+        val trimmed = textBeforeCursor.trimEnd()
+
+        // After a colon (like "name:" or "name: ") suggests a type position
+        if (trimmed.endsWith(":")) {
+            return CompletionContext.TYPE_POSITION
+        }
+
+        // After "returns" keyword suggests a type position
+        if (trimmed.endsWith("returns") || trimmed.endsWith("returns ")) {
+            return CompletionContext.TYPE_POSITION
+        }
+
+        return null
     }
 
     private fun topLevelKeywords(): List<CompletionItem> {

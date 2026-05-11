@@ -52,6 +52,16 @@ interface CompilerService {
     fun getSourceContent(uri: String): String?
 
     fun getAllParsedFiles(): Map<String, ParsedFile>
+
+    /**
+     * Get the last compile result for pull diagnostics.
+     */
+    fun getCompileResult(): CompileResult?
+
+    /**
+     * Get all source URIs in the workspace for workspace diagnostics.
+     */
+    fun getSourceUris(): Set<String>
 }
 
 class DefaultCompilerService(
@@ -79,6 +89,13 @@ class DefaultCompilerService(
             astService.getOrParse(uri, content).let { uri to it }
         }.toMap()
     }
+
+    override fun getCompileResult(): CompileResult? {
+        compileIfNeeded()
+        return lastCompileResult
+    }
+
+    override fun getSourceUris(): Set<String> = sources.keys.toSet()
 
     private fun compileIfNeeded() {
         if (modifiedSources.isEmpty() && lastCompileResult != null) return

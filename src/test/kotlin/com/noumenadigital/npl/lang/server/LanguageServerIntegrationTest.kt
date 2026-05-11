@@ -480,6 +480,10 @@ class LanguageServerIntegrationTest : FunSpec() {
                     override fun getSourceContent(uri: String): String? = null
 
                     override fun getAllParsedFiles(): Map<String, ParsedFile> = emptyMap()
+
+                    override fun getCompileResult(): com.noumenadigital.npl.lang.CompileResult? = null
+
+                    override fun getSourceUris(): Set<String> = emptySet()
                 }
 
             val server =
@@ -538,4 +542,8 @@ class CompilerServiceSpy(
     override fun getSourceContent(uri: String): String? = delegate.getSourceContent(uri)
 
     override fun getAllParsedFiles(): Map<String, ParsedFile> = delegate.getAllParsedFiles()
+
+    override fun getCompileResult() = delegate.getCompileResult()
+
+    override fun getSourceUris() = delegate.getSourceUris()
 }
