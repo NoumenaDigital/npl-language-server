@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.noumenadigital.npl.lang.server.compilation.CompilerService
 import com.noumenadigital.npl.lang.server.compilation.DefaultCompilerService
+import com.noumenadigital.npl.lang.server.features.CallHierarchyProvider
 import com.noumenadigital.npl.lang.server.features.CodeActionProvider
 import com.noumenadigital.npl.lang.server.features.CodeLensProvider
 import com.noumenadigital.npl.lang.server.features.CompletionProvider
@@ -21,6 +22,7 @@ import com.noumenadigital.npl.lang.server.features.RenameProvider
 import com.noumenadigital.npl.lang.server.features.SemanticTokensProvider
 import com.noumenadigital.npl.lang.server.features.SignatureHelpProvider
 import com.noumenadigital.npl.lang.server.features.TypeDefinitionProvider
+import com.noumenadigital.npl.lang.server.features.TypeHierarchyProvider
 import com.noumenadigital.npl.lang.server.features.WorkspaceSymbolProvider
 import mu.KotlinLogging
 import org.eclipse.lsp4j.CallHierarchyIncomingCall
@@ -202,6 +204,10 @@ class LanguageServer(
                     setInterFileDependencies(true)
                     setWorkspaceDiagnostics(true)
                 }
+                // Call hierarchy (incoming/outgoing calls)
+                callHierarchyProvider = Either.forLeft(true)
+                // Type hierarchy (supertypes/subtypes)
+                typeHierarchyProvider = Either.forLeft(true)
             }
 
         val standardWorkspaceFolderUris =
@@ -629,38 +635,50 @@ class LanguageServer(
 
         /** [LSP: textDocument/prepareCallHierarchy](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_prepareCallHierarchy) */
         override fun prepareCallHierarchy(params: CallHierarchyPrepareParams): CompletableFuture<MutableList<CallHierarchyItem>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(mutableListOf())
+
+            val items = CallHierarchyProvider.prepareCallHierarchy(parsedFile, params.position)
+            return completedFuture(items.toMutableList())
         }
 
         /** [LSP: callHierarchy/incomingCalls](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#callHierarchy_incomingCalls) */
         override fun callHierarchyIncomingCalls(params: CallHierarchyIncomingCallsParams): CompletableFuture<MutableList<CallHierarchyIncomingCall>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val allFiles = compilerService.getAllParsedFiles()
+            val calls = CallHierarchyProvider.getIncomingCalls(params.item, allFiles)
+            return completedFuture(calls.toMutableList())
         }
 
         /** [LSP: callHierarchy/outgoingCalls](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#callHierarchy_outgoingCalls) */
         override fun callHierarchyOutgoingCalls(params: CallHierarchyOutgoingCallsParams): CompletableFuture<MutableList<CallHierarchyOutgoingCall>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val allFiles = compilerService.getAllParsedFiles()
+            val calls = CallHierarchyProvider.getOutgoingCalls(params.item, allFiles)
+            return completedFuture(calls.toMutableList())
         }
 
         /** [LSP: textDocument/prepareTypeHierarchy](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_prepareTypeHierarchy) */
         override fun prepareTypeHierarchy(params: TypeHierarchyPrepareParams): CompletableFuture<MutableList<TypeHierarchyItem>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val uri = params.textDocument.uri
+            val parsedFile = compilerService.getParsedFile(uri)
+                ?: return completedFuture(mutableListOf())
+
+            val items = TypeHierarchyProvider.prepareTypeHierarchy(parsedFile, params.position)
+            return completedFuture(items.toMutableList())
         }
 
         /** [LSP: typeHierarchy/supertypes](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#typeHierarchy_supertypes) */
         override fun typeHierarchySupertypes(params: TypeHierarchySupertypesParams): CompletableFuture<MutableList<TypeHierarchyItem>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val allFiles = compilerService.getAllParsedFiles()
+            val items = TypeHierarchyProvider.getSupertypes(params.item, allFiles)
+            return completedFuture(items.toMutableList())
         }
 
         /** [LSP: typeHierarchy/subtypes](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#typeHierarchy_subtypes) */
         override fun typeHierarchySubtypes(params: TypeHierarchySubtypesParams): CompletableFuture<MutableList<TypeHierarchyItem>> {
-            // TODO: not yet implemented
-            return completedFuture(null)
+            val allFiles = compilerService.getAllParsedFiles()
+            val items = TypeHierarchyProvider.getSubtypes(params.item, allFiles)
+            return completedFuture(items.toMutableList())
         }
 
         // ─── Diagnostics (pull model) ──────────────────────────────────────────

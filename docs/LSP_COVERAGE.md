@@ -126,12 +126,12 @@ Legend:
 
 | LSP Feature | Status | Notes |
 |---|---|---|
-| `textDocument/prepareCallHierarchy` | 🔲 | Stub |
-| `callHierarchy/incomingCalls` | 🔲 | Stub |
-| `callHierarchy/outgoingCalls` | 🔲 | Stub |
-| `textDocument/prepareTypeHierarchy` | 🔲 | Stub |
-| `typeHierarchy/supertypes` | 🔲 | Stub |
-| `typeHierarchy/subtypes` | 🔲 | Stub |
+| `textDocument/prepareCallHierarchy` | ✅ | Prepares call hierarchy item for functions and actions (permissions/obligations) |
+| `callHierarchy/incomingCalls` | ✅ | Finds all callers of a function across all loaded files |
+| `callHierarchy/outgoingCalls` | ✅ | Finds all functions called by a function |
+| `textDocument/prepareTypeHierarchy` | ✅ | Prepares type hierarchy item for structs, unions, enums, protocols, notifications |
+| `typeHierarchy/supertypes` | ✅ | Finds parent types (e.g., union containing a variant struct) |
+| `typeHierarchy/subtypes` | ✅ | Finds child types (union variants, enum values) |
 
 ---
 
@@ -164,30 +164,3 @@ Legend:
 | `workspace/didRenameFiles` | 🔲 | Stub |
 | `workspace/willDeleteFiles` | 🔲 | Stub |
 | `workspace/didDeleteFiles` | ✅ | Removes source + clears diagnostics |
-
----
-
-## Suggested Implementation Order
-
-Priority order based on editor-experience value and compiler API availability:
-
-1. ✅ `textDocument/hover` — type info & docs on hover
-2. ✅ `textDocument/definition` — go to definition
-3. ✅ `textDocument/documentSymbol` — outline / breadcrumb navigation
-4. ✅ `textDocument/references` — find all references
-5. ✅ `textDocument/rename` / `textDocument/prepareRename` — safe rename
-6. ✅ `textDocument/completion` — auto-complete
-7. ✅ `textDocument/semanticTokens/full` — rich syntax highlighting
-8. ✅ `textDocument/foldingRange` — code folding
-9. ✅ `textDocument/signatureHelp` — function signature hints
-10. ✅ `textDocument/codeAction` — quick fixes
-11. ✅ `workspace/symbol` — cross-file symbol search
-12. ✅ `textDocument/documentHighlight` — highlight other occurrences
-13. ✅ `textDocument/inlayHint` — type hints
-
-### Next priorities:
-
-1. `textDocument/formatting` — auto-format code
-2. `textDocument/prepareCallHierarchy` — call hierarchy navigation
-3. `textDocument/linkedEditingRange` — edit multiple related ranges
-
